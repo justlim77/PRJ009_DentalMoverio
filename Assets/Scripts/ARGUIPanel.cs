@@ -21,6 +21,7 @@ public class ARGUIPanel : MonoBehaviour
     {
         Core.BroadcastEvent("OpenPanel", this, this);
         canvasGroup.alpha = 1;
+        this.transform.SetAsLastSibling();
     }
 
     public void SetAlpha(float alpha)

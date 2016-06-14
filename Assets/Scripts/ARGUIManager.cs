@@ -17,13 +17,17 @@ public class ARGUIManager : MonoBehaviour
     [SerializeField] Button btnFacial;
     [SerializeField] Button btnRadiography;
     [SerializeField] Button btnMiracast;
+    [SerializeField] GameObject TopBar;
+    [SerializeField] GameObject BotBar;
+    [SerializeField] GameObject StartPanel;
 
-    public Text headerLabel;
     public Image planeRenderer;
 
     [SerializeField] Resolution resolution;
     string deviceName = "";
     WebCamTexture camTex;
+
+    CanvasGroup _topBarCanvasGroup, _botBarCanvasGroup;
 
     void Awake()
     {
@@ -38,11 +42,25 @@ public class ARGUIManager : MonoBehaviour
         btnRadiography.onClick.AddListener(() => StopFeed());
         btnMiracast.onClick.AddListener(() => LaunchFeed());
 
+        if (TopBar != null)
+        { 
+            _topBarCanvasGroup = TopBar.GetComponent<CanvasGroup>();
+            _topBarCanvasGroup.alpha = 0;
+        }
+
+        if (BotBar != null)
+        {
+            _botBarCanvasGroup = BotBar.GetComponent<CanvasGroup>();
+            _botBarCanvasGroup.alpha = 0;   
+        }
+
         deviceName = WebCamTexture.devices[0].name;
 
         camTex = new WebCamTexture(deviceName, resolution.width, resolution.height);
 
         planeRenderer.material.mainTexture = camTex;
+
+        StartPanel.transform.SetAsLastSibling();
 	}
 
     void LaunchFeed()
@@ -85,6 +103,24 @@ public class ARGUIManager : MonoBehaviour
         }
 
         return null;
+    }
+
+    public void ShowTopBar(bool show = true)
+    {
+        if (_topBarCanvasGroup != null)
+            if (show)
+                _topBarCanvasGroup.alpha = 1;
+            else
+                _topBarCanvasGroup.alpha = 0;
+    }
+
+    public void ShowBotBar(bool show = true)
+    {
+        if (_botBarCanvasGroup != null)
+            if (show)
+                _botBarCanvasGroup.alpha = 1;
+            else
+                _botBarCanvasGroup.alpha = 0;
     }
 }
 

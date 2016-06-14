@@ -22,6 +22,7 @@ public class MoverioCameraController : MonoBehaviour {
 	public Camera LeftEyeCam, RightEyeCam, Cam2D;
 
 	public float PupillaryDistance = 0.05f;
+    public Color BackgroundColor = Color.black;
 
 	MoverioDisplayType _displayState;
 
@@ -34,6 +35,7 @@ public class MoverioCameraController : MonoBehaviour {
 	{
 		LeftEyeCam.aspect = RightEyeCam.aspect = Screen.width / Screen.height * 2.0f;
 		SetPupillaryDistance(PupillaryDistance);
+        SetBackgroundColor(BackgroundColor);
 	}
 
 	public void SetPupillaryDistance(float pDist)
@@ -43,6 +45,13 @@ public class MoverioCameraController : MonoBehaviour {
 		LeftEyeCam.transform.localPosition = new Vector3(-PupillaryDistance, 0.0f, 0.0f);
 		RightEyeCam.transform.localPosition = new Vector3(PupillaryDistance, 0.0f, 0.0f);
 	}
+
+    public void SetBackgroundColor(Color bgCol)
+    {
+        BackgroundColor = bgCol;
+
+        LeftEyeCam.backgroundColor = RightEyeCam.backgroundColor = Cam2D.backgroundColor = BackgroundColor;
+    }
 
 	void OnEnable()
 	{
