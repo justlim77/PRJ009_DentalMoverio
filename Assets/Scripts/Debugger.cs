@@ -3,8 +3,8 @@ using System.Collections;
 using UnityEngine.UI;
 using System.Collections.Generic;
 
-public class Debugger : MonoBehaviour{
-
+public class Debugger : MonoBehaviour
+{
     static Debugger _Instance;
     public static Debugger Instance
     {
@@ -15,10 +15,10 @@ public class Debugger : MonoBehaviour{
     }
 
     public bool enableDebug = true;
+    public GameObject debugPanel;
     public Text debugLabel;
 
     List<string> logList = new List<string>();
-
 
     void Awake()
     {
@@ -45,6 +45,13 @@ public class Debugger : MonoBehaviour{
 
     void EnableDebug(bool val)
     {
-        debugLabel.enabled = val;
+        if (debugPanel != null)
+            debugPanel.SetActive(val);
+    }
+
+    public void EnableDebug()
+    {
+        if (debugPanel != null)
+            debugPanel.SetActive(!debugPanel.activeSelf);
     }
 }

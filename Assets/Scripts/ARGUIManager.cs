@@ -14,8 +14,10 @@ public class ARGUIManager : MonoBehaviour
     }
 
     public ARGUIPanel[] ARGUIPanels;
+    [SerializeField] Button btnMenu;
     [SerializeField] Button btnFacial;
     [SerializeField] Button btnRadiography;
+    [SerializeField] Button btnVideo;
     [SerializeField] Button btnMiracast;
     [SerializeField] GameObject TopBar;
     [SerializeField] GameObject BotBar;
@@ -33,13 +35,16 @@ public class ARGUIManager : MonoBehaviour
     {
         _Instance = this;
 
-        Core.SubscribeEvent("OpenPanel", OpenPanel);
+        Core.SubscribeEvent("OnOpenPanel", OnOpenPanel);
+        Core.SubscribeEvent("OnToggleBars", OnToggleBars);
     }
 
     void Start ()
     {
+        btnMenu.onClick.AddListener(() => OnToggleBars(this, false));
         btnFacial.onClick.AddListener(() => StopFeed());
         btnRadiography.onClick.AddListener(() => StopFeed());
+        btnVideo.onClick.AddListener(() => StopFeed());
         btnMiracast.onClick.AddListener(() => LaunchFeed());
 
         if (TopBar != null)
@@ -57,8 +62,6 @@ public class ARGUIManager : MonoBehaviour
         deviceName = WebCamTexture.devices[0].name;
 
         camTex = new WebCamTexture(deviceName, resolution.width, resolution.height);
-        camTex.Play();
-        camTex.Pause();
 
         planeRenderer.material.mainTexture = camTex;
 
@@ -74,19 +77,21 @@ public class ARGUIManager : MonoBehaviour
     void StopFeed()
     {
         if(camTex.isPlaying)
-            camTex.Pause();
+            camTex.Stop();
     }
 
     void OnDisable()
     {
+        btnMenu.onClick.RemoveAllListeners();
         btnFacial.onClick.RemoveAllListeners();
         btnRadiography.onClick.RemoveAllListeners();
+        btnVideo.onClick.RemoveAllListeners();
         btnMiracast.onClick.RemoveAllListeners();
 
-        Core.UnsubscribeEvent("OpenPanel", OpenPanel);
+        Core.UnsubscribeEvent("OpenPanel", OnOpenPanel);
     }
 
-    object OpenPanel(object sender, object args)
+    object OnOpenPanel(object sender, object args)
     {
         ARGUIPanel panel;
         if (args is ARGUIPanel)
@@ -102,6 +107,19 @@ public class ARGUIManager : MonoBehaviour
 
             string msg = panel.header;
             Core.BroadcastEvent("OnUpdateHeader", this, msg);
+        }
+
+        return null;
+    }
+
+    object OnToggleBars(object sender, object args)
+    {
+        if (args is bool)
+        {
+            bool val = (bool)args;
+
+            ShowTopBar(val);
+            ShowBotBar(val);            
         }
 
         return null;

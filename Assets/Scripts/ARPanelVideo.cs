@@ -37,16 +37,14 @@ public class ARPanelVideo : MonoBehaviour
             videoInfo = dirFileInfos[i];
         }
 
+        string name = videoInfo.Name.Split('.')[0];
+        string format = videoInfo.Extension.ToUpper().Substring(1);
+        float size = videoInfo.Length / 1024 / 1024;
         VideoParams.text = string.Format(
-            "Title: {0}",
-            videoInfo.Name
+            "<color=#00ffffff><b>Title</b></color>\n{0}\n\n<color=#00ffffff><b>Format</b></color>\n{1}\n\n<color=#00ffffff><b>Size</b></color>\n{2} MB",
+            name, format, (int)size
             );
     }
-	
-	// Update is called once per frame
-	void Update () {
-	
-	}
 
     public void LaunchVideo()
     {
