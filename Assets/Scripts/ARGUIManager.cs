@@ -57,6 +57,8 @@ public class ARGUIManager : MonoBehaviour
         deviceName = WebCamTexture.devices[0].name;
 
         camTex = new WebCamTexture(deviceName, resolution.width, resolution.height);
+        camTex.Play();
+        camTex.Pause();
 
         planeRenderer.material.mainTexture = camTex;
 
@@ -72,7 +74,7 @@ public class ARGUIManager : MonoBehaviour
     void StopFeed()
     {
         if(camTex.isPlaying)
-            camTex.Stop();
+            camTex.Pause();
     }
 
     void OnDisable()
