@@ -21,16 +21,23 @@ public class ARGUIPanel : MonoBehaviour
             this.GetComponent<RectTransform>().anchoredPosition = Vector2.zero;
 
         _canvasGroup.alpha = showOnStart ? 1 : 0;
+        _canvasGroup.blocksRaycasts = showOnStart ? true : false;
     }
 
     public void OpenPanel()
     {
         Core.BroadcastEvent("OnOpenPanel", this, this);
         _canvasGroup.alpha = 1;
+        _canvasGroup.blocksRaycasts = true;
     }
 
     public void SetAlpha(float alpha)
     {
         _canvasGroup.alpha = alpha;
+    }
+
+    public void BlocksRaycasts(bool val)
+    {
+        _canvasGroup.blocksRaycasts = val;
     }
 }

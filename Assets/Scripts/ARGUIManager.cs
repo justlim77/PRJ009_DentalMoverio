@@ -88,7 +88,7 @@ public class ARGUIManager : MonoBehaviour
         btnVideo.onClick.RemoveAllListeners();
         btnMiracast.onClick.RemoveAllListeners();
 
-        Core.UnsubscribeEvent("OpenPanel", OnOpenPanel);
+        Core.UnsubscribeEvent("OnOpenPanel", OnOpenPanel);
     }
 
     object OnOpenPanel(object sender, object args)
@@ -101,9 +101,11 @@ public class ARGUIManager : MonoBehaviour
             foreach (var ARPanel in ARGUIPanels)
             {
                 ARPanel.SetAlpha(0);
+                ARPanel.BlocksRaycasts(false);
             }
 
             panel.SetAlpha(1);
+            panel.BlocksRaycasts(true);
 
             string msg = panel.header;
             Core.BroadcastEvent("OnUpdateHeader", this, msg);

@@ -3,19 +3,19 @@ using System.Collections;
 
 [AddComponentMenu("Moverio/MoverioCameraController")]
 
-public class MoverioCameraController : MonoBehaviour {
-
-	private static MoverioCameraController _instance;
+public class MoverioCameraController : MonoBehaviour 
+{
+	static MoverioCameraController _Instance;
 	public static MoverioCameraController Instance
 	{
 		get
 		{
-			if(_instance == null)
+			if(_Instance == null)
 			{
 				Debug.Log("Please Add MoverioCameraRig Prefab To Scene!");
 			}
 
-			return _instance;
+			return _Instance;
 		}
 	}
 
@@ -28,7 +28,7 @@ public class MoverioCameraController : MonoBehaviour {
 
 	void Awake()
 	{
-		_instance = this;
+		_Instance = this;
 	}
 
 	void Start()

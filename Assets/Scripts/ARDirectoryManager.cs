@@ -102,13 +102,13 @@ public class ARDirectoryManager : MonoBehaviour
     {
         _Instance = this;
 
-        if (Application.platform == RuntimePlatform.Android)
-        { 
-            if (InitializeDirectory() == false)
-                Debugger.Instance.Log("ARDirectoryManager.InitializeDirectory failed to initialize!");
-            else
-                Debugger.Instance.Log("ARDirectoryManager.InitializeDirectory succeeded!");
-        }
+        //if (Application.platform == RuntimePlatform.Android)
+        //{ 
+        //    if (InitializeDirectory() == false)
+        //        Debugger.Instance.Log("ARDirectoryManager.InitializeDirectory failed to initialize!");
+        //    else
+        //        Debugger.Instance.Log("ARDirectoryManager.InitializeDirectory succeeded!");
+        //}
     }
 
     void OnDestroy()
