@@ -54,10 +54,19 @@ public class ARContentLoader : MonoBehaviour
     {
         print("Fetching Content from: " + content.URL);
         string url = content.URL;
-        Texture2D tex = new Texture2D(4, 4, TextureFormat.DXT1, false);
+        MovieTexture tex = new MovieTexture();
         WWW www = new WWW(url);
-        yield return www;        
-        //content.VideoByteArray = www.bytes;
+        while (www.isDone == false)
+        {
+            yield return null;
+        }
+        tex = www.movie;        
+        while (tex.isReadyToPlay == false)
+        {
+            yield return 0;
+        }
+          
+        content.MovieTex = tex;
 
         itemsLoaded++;
         Core.BroadcastEvent("OnUpdateProgress", this, Progress);
@@ -113,5 +122,5 @@ public class ImageContent
 public class VideoContent
 {
     public string URL;
-    public byte[] VideoByteArray;
+    public MovieTexture MovieTex;
 }
