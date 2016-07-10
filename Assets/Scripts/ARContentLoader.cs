@@ -1,63 +1,75 @@
 ﻿using UnityEngine;
+using UnityEngine.UI;
 using System.Collections;
 
 public class ARContentLoader : MonoBehaviour
 {
+    public ARContentLoader Instance { get; private set; }
     public Patient patient;
 
-	// Use this for initialization
-	void Start ()
+    public int itemsToLoad;
+    public int itemsLoaded;
+
+    public bool Loaded
     {
-        StartCoroutine(FetchPatientData());
-	}
-	
-	// Update is called once per frame
-	void Update () {
-	
-	}
+        get; private set;
+    }
 
-    IEnumerator FetchPatientData()
+    void Awake()
     {
-        string url = "";
-
-        url = patient.FaceFront.URL;
-        while (true)
+        if (Instance = null)
         {
-            WWW www = new WWW(url);
-            yield return www;
-            www.LoadImageIntoTexture(patient.FaceFront.Tex);
+            Instance = this;
         }
+    }
 
-        url = patient.FaceOblique.URL;
-        while (true)
-        {
-            WWW www = new WWW(url);
-            yield return www;
-            www.LoadImageIntoTexture(patient.FaceOblique.Tex);
-        }
+    void Start()
+    {
+        Loaded = false;
+        itemsLoaded = 0;
+        StartCoroutine(LoadContent(patient.FaceFront));
+        StartCoroutine(LoadContent(patient.FaceOblique));
+        StartCoroutine(LoadContent(patient.FaceSide));
+        StartCoroutine(LoadContent(patient.RadioOPG));
+        StartCoroutine(LoadContent(patient.RadioLat));
+        StartCoroutine(LoadContent(patient.Video));
+    }
 
-        url = patient.FaceSide.URL;
-        while (true)
-        {
-            WWW www = new WWW(url);
-            yield return www;
-            www.LoadImageIntoTexture(patient.FaceSide.Tex);
-        }
+    IEnumerator LoadContent(ImageContent content)
+    {
+        print("Fetching Content from: " + content.URL);
+        string url = content.URL;
+        Texture2D tex = new Texture2D(4, 4, TextureFormat.DXT1, false);
+        WWW www = new WWW(url);
+        yield return www;
+        www.LoadImageIntoTexture(tex);
+        content.Tex = tex;
+        content.Image.texture = tex;
 
-        url = patient.RadioOPG.URL;
-        while (true)
-        {
-            WWW www = new WWW(url);
-            yield return www;
-            www.LoadImageIntoTexture(patient.RadioOPG.Tex);
-        }
+        itemsLoaded++;
+        Core.BroadcastEvent("OnUpdateProgress", this, Progress);
+    }
 
-        url = patient.RadioLat.URL;
-        while (true)
+    IEnumerator LoadContent(VideoContent content)
+    {
+        print("Fetching Content from: " + content.URL);
+        string url = content.URL;
+        Texture2D tex = new Texture2D(4, 4, TextureFormat.DXT1, false);
+        WWW www = new WWW(url);
+        yield return www;        
+        //content.VideoByteArray = www.bytes;
+
+        itemsLoaded++;
+        Core.BroadcastEvent("OnUpdateProgress", this, Progress);
+    }
+
+
+    public float Progress
+    {
+        get
         {
-            WWW www = new WWW(url);
-            yield return www;
-            www.LoadImageIntoTexture(patient.RadioLat.Tex);
+            float percentage = (float)itemsLoaded / (float)itemsToLoad;
+            return percentage;
         }
     }
 }
@@ -78,15 +90,28 @@ public class Patient
 }
 
 [System.Serializable]
-public struct ImageContent
+public class ImageContent
 {
     public string URL;
     public Texture2D Tex;
+    public RawImage Image;
+
+    public ImageContent()
+    {
+        URL = "";
+        Tex = null;
+    }
+
+    public ImageContent(string url, int width, int height)
+    {
+        URL = url;
+        Tex = new Texture2D(width, height, TextureFormat.DXT1, false);
+    }
 }
 
 [System.Serializable]
-public struct VideoContent
+public class VideoContent
 {
     public string URL;
-    public Texture2D[] MovieTex;
+    public byte[] VideoByteArray;
 }
