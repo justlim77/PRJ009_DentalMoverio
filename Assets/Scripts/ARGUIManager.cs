@@ -4,21 +4,17 @@ using System.Collections;
 
 public class ARGUIManager : MonoBehaviour
 {
-    static ARGUIManager _Instance = null;
-    public static ARGUIManager Instance
-    { 
-        get 
-        { 
-            return _Instance; 
-        } 
-    }
+    public static ARGUIManager Instance { get; private set; }
 
     public ARGUIPanel[] ARGUIPanels;
-    [SerializeField] Button btnMenu;
+    [Header("Bottom Panel")]
     [SerializeField] Button btnFacial;
     [SerializeField] Button btnRadiography;
     [SerializeField] Button btnVideo;
     [SerializeField] Button btnMiracast;
+    [Header("General")]
+    [SerializeField] Button btnMenu;
+    [SerializeField] Button btnLoad;
     [SerializeField] GameObject TopBar;
     [SerializeField] GameObject BotBar;
     [SerializeField] GameObject StartPanel;
@@ -33,7 +29,8 @@ public class ARGUIManager : MonoBehaviour
 
     void Awake()
     {
-        _Instance = this;
+        if(Instance == null)
+            Instance = this;
 
         Core.SubscribeEvent("OnOpenPanel", OnOpenPanel);
         Core.SubscribeEvent("OnToggleBars", OnToggleBars);
@@ -42,6 +39,7 @@ public class ARGUIManager : MonoBehaviour
     void Start ()
     {
         btnMenu.onClick.AddListener(() => OnToggleBars(this, false));
+        btnLoad.onClick.AddListener(() => StartApp());
         btnFacial.onClick.AddListener(() => StopFeed());
         btnRadiography.onClick.AddListener(() => StopFeed());
         btnVideo.onClick.AddListener(() => StopFeed());
@@ -61,23 +59,32 @@ public class ARGUIManager : MonoBehaviour
 
         deviceName = WebCamTexture.devices[0].name;
 
-        camTex = new WebCamTexture(deviceName, resolution.width, resolution.height);
+        if(deviceName != null)
+            camTex = new WebCamTexture(deviceName, resolution.width, resolution.height);
 
         planeRenderer.material.mainTexture = camTex;
 
         StartPanel.transform.SetAsLastSibling();
 	}
 
+    void StartApp()
+    {
+        ShowBar(_topBarCanvasGroup);
+        ShowBar(_botBarCanvasGroup);
+    }
+
     void LaunchFeed()
     {
-        if(!camTex.isPlaying)
-            camTex.Play();
+        if (camTex != null)
+            if (!camTex.isPlaying)
+                camTex.Play();
     }
 
     void StopFeed()
     {
-        if(camTex.isPlaying)
-            camTex.Stop();
+        if(camTex != null)
+            if(camTex.isPlaying)
+                camTex.Stop();
     }
 
     void OnDisable()
@@ -120,29 +127,19 @@ public class ARGUIManager : MonoBehaviour
         {
             bool val = (bool)args;
 
-            ShowTopBar(val);
-            ShowBotBar(val);            
+            ShowBar(_topBarCanvasGroup, val);
+            ShowBar(_botBarCanvasGroup, val);
         }
 
         return null;
     }
 
-    public void ShowTopBar(bool show = true)
+    public void ShowBar(CanvasGroup cg, bool show = true)
     {
-        if (_topBarCanvasGroup != null)
-            if (show)
-                _topBarCanvasGroup.alpha = 1;
-            else
-                _topBarCanvasGroup.alpha = 0;
-    }
+        if (cg == null)
+            return;
 
-    public void ShowBotBar(bool show = true)
-    {
-        if (_botBarCanvasGroup != null)
-            if (show)
-                _botBarCanvasGroup.alpha = 1;
-            else
-                _botBarCanvasGroup.alpha = 0;
+        cg.alpha = show ? 1 : 0;
     }
 }
 

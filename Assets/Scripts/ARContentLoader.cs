@@ -4,7 +4,7 @@ using System.Collections;
 
 public class ARContentLoader : MonoBehaviour
 {
-    public ARContentLoader Instance { get; private set; }
+    public static ARContentLoader Instance { get; private set; }
     public Patient patient;
 
     public int itemsToLoad;
@@ -24,6 +24,11 @@ public class ARContentLoader : MonoBehaviour
     }
 
     void Start()
+    {
+        Load();
+    }
+
+    public void Load()
     {
         Loaded = false;
         itemsLoaded = 0;
