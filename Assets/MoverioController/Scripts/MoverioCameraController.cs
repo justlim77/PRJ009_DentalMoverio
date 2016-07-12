@@ -25,6 +25,7 @@ public class MoverioCameraController : MonoBehaviour
     public Color BackgroundColor = Color.black;
 
 	MoverioDisplayType _displayState;
+    bool _muteState;
 
 	void Awake()
 	{
@@ -67,20 +68,30 @@ public class MoverioCameraController : MonoBehaviour
 	{
 		switch(type)
 		{
-		case MoverioEventType.Display3DOff:
-			SetCurrentDisplayType(MoverioDisplayType.Display2D);
-			break;
-		case MoverioEventType.Display3DOn:
-			SetCurrentDisplayType(MoverioDisplayType.Display3D);
-			break;
-		}
-
+		    case MoverioEventType.Display3DOff:
+			    SetCurrentDisplayType(MoverioDisplayType.Display2D);
+			    break;
+		    case MoverioEventType.Display3DOn:
+			    SetCurrentDisplayType(MoverioDisplayType.Display3D);
+			    break;
+            case MoverioEventType.MuteDisplayOff:
+                SetCurrentMuteType(false);
+                break;
+            case MoverioEventType.MuteDisplayOn:
+                SetCurrentMuteType(true);
+                break;
+        }
 	}
 
 	public MoverioDisplayType GetCurrentDisplayState()
 	{
 		return _displayState;
 	}
+
+    public bool GetCurrentMuteState()
+    {
+        return _muteState;
+    }
 
 	public void SetCurrentDisplayType(MoverioDisplayType type)
 	{
@@ -99,5 +110,14 @@ public class MoverioCameraController : MonoBehaviour
 		}
 	}
 
+    public void SetCurrentMuteType(bool type)
+    {
+        _muteState = type;
 
+        MoverioController controller = MoverioController.Instance;
+
+        controller.MuteAudio(_muteState);
+        controller.MuteDisplay(_muteState);
+
+    }
 }

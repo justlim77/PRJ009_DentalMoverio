@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
 using System.Collections;
+using System;
 
 public class ARGUIManager : MonoBehaviour
 {
@@ -15,6 +16,7 @@ public class ARGUIManager : MonoBehaviour
     [Header("General")]
     [SerializeField] Button btnMenu;
     [SerializeField] Button btnLoad;
+    [SerializeField] Button btnSnapshot;
     [SerializeField] GameObject TopBar;
     [SerializeField] GameObject BotBar;
     [SerializeField] GameObject StartPanel;
@@ -22,10 +24,11 @@ public class ARGUIManager : MonoBehaviour
     public Image planeRenderer;
 
     [SerializeField] Resolution resolution;
-    string deviceName = "";
+    WebCamDevice device;
     WebCamTexture camTex;
 
     CanvasGroup _topBarCanvasGroup, _botBarCanvasGroup;
+    int _currentPanelIdx;
 
     void Awake()
     {
@@ -44,6 +47,7 @@ public class ARGUIManager : MonoBehaviour
         btnRadiography.onClick.AddListener(() => StopFeed());
         btnVideo.onClick.AddListener(() => StopFeed());
         btnMiracast.onClick.AddListener(() => LaunchFeed());
+        btnSnapshot.onClick.AddListener(() => SnapShot());
 
         if (TopBar != null)
         { 
@@ -57,10 +61,10 @@ public class ARGUIManager : MonoBehaviour
             _botBarCanvasGroup.alpha = 0;   
         }
 
-        deviceName = WebCamTexture.devices[0].name;
+        device = WebCamTexture.devices[0];
 
-        if(deviceName != null)
-            camTex = new WebCamTexture(deviceName, resolution.width, resolution.height);
+        if(device.name != null)
+            camTex = new WebCamTexture(device.name, resolution.width, resolution.height);
 
         planeRenderer.material.mainTexture = camTex;
 
@@ -114,6 +118,8 @@ public class ARGUIManager : MonoBehaviour
             panel.SetAlpha(1);
             panel.BlocksRaycasts(true);
 
+            _currentPanelIdx = Array.IndexOf(ARGUIPanels, panel);
+
             string msg = panel.header;
             Core.BroadcastEvent("OnUpdateHeader", this, msg);
         }
@@ -134,17 +140,62 @@ public class ARGUIManager : MonoBehaviour
         return null;
     }
 
-    public void ShowBar(CanvasGroup cg, bool show = true)
+    void ShowBar(CanvasGroup cg, bool show = true)
     {
         if (cg == null)
             return;
 
         cg.alpha = show ? 1 : 0;
     }
+
+    void SnapShot()
+    {
+        ScreenCapture capture = GetComponent<ScreenCapture>();
+
+        string filePath;
+#if UNITY_ANDROID
+        filePath = "/mnt/sdcard/DCIM/Images/" + "DentalAR_" + capture.GetFileName(resolution.width, resolution.height);
+#elif UNITY_EDITOR
+        filePath = Application.dataPath + "/Screenshots/" + capture.GetFileName(resolution.width, resolution.height);
+#endif
+        Debug.Log("File path: " + filePath);
+        capture.SaveScreenshot(CaptureMethod.ReadPixels_Asynch, filePath);
+    }
+
+    void NextPanel()
+    {
+        int nextIdx = _currentPanelIdx++;
+        if (nextIdx > ARGUIPanels.Length)
+        {
+            nextIdx = ARGUIPanels.Length;
+            return;
+        }
+
+        ARGUIPanel panel = ARGUIPanels[nextIdx];
+        if (panel != null)
+        {
+            OnOpenPanel(this, panel);
+        }
+    }
+    void PreviousPanel()
+    {
+        int nextIdx = _currentPanelIdx--;
+        if (nextIdx < 0)
+        {
+            nextIdx = 0;
+            return;
+        }
+
+        ARGUIPanel panel = ARGUIPanels[nextIdx];
+        if (panel != null)
+        {
+            OnOpenPanel(this, panel);
+        }
+    }
 }
 
 [System.Serializable]
-struct Resolution
+public struct Resolution
 {
     public int width;
     public int height;
