@@ -61,7 +61,14 @@ public class ARGUIManager : MonoBehaviour
             _botBarCanvasGroup.alpha = 0;   
         }
 
-        device = WebCamTexture.devices[0];
+        try
+        {
+            device = WebCamTexture.devices[0];
+        }
+        catch (IndexOutOfRangeException e)
+        {
+            Debug.Log(e.Message);
+        }
 
         if(device.name != null)
             camTex = new WebCamTexture(device.name, resolution.width, resolution.height);

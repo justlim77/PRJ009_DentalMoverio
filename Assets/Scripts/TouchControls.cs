@@ -19,7 +19,7 @@ public class TouchControls : MonoBehaviour
 
     void Start()
     {
-        dragDistance = Screen.height * dragRatio / 100; //dragDistance is 15% height of the screen
+        dragDistance = Screen.height * dragRatio * 0.01f; //dragDistance is 15% height of the screen
     }
 
     void Update()
@@ -32,24 +32,27 @@ public class TouchControls : MonoBehaviour
 
             if (touch.phase == TouchPhase.Began) //check for the first touch
             {
-                fp = touch.position;
-                lp = touch.position;
+                fp = lp = touch.position;
             }
             else if (touch.phase == TouchPhase.Moved) // update the last position based on where they moved
             {
                 lp = touch.position;
             }
+            else if (touch.phase == TouchPhase.Stationary)
+            {
+                //Check for hold
+                if (touchDuration >= holdTime)
+                {
+                    Debug.Log("Hold");
+                    touchType = TouchType.Hold;
+                }
+            }
             else if (touch.phase == TouchPhase.Ended) //check if the finger is removed from the screen
             {
-                if (touchDuration > 0.2f)
-                {
-                    StartCoroutine(SingleOrDouble());
-                }
-
                 lp = touch.position;  //last touch position. Ommitted if you use list
 
                 //Check if drag distance is greater than 20% of the screen height
-                if (Mathf.Abs(lp.x - fp.x) > dragDistance || Mathf.Abs(lp.y - fp.y) > dragDistance)
+                if ((Mathf.Abs(lp.x - fp.x) > dragDistance || Mathf.Abs(lp.y - fp.y) > dragDistance) && touchDuration < holdTime)
                 {//It's a drag
                  //check if the drag is vertical or horizontal
                     if (Mathf.Abs(lp.x - fp.x) > Mathf.Abs(lp.y - fp.y))
@@ -78,22 +81,13 @@ public class TouchControls : MonoBehaviour
                             touchType = TouchType.Down;
                         }
                     }
-                }
-                else
+                }   //end of drag check
+                else if (touchDuration < holdTime)
                 {
-                    //It's a tap as the drag distance is less than 20% of the screen height
-                    Debug.Log("Tap");
-                    touchType = TouchType.SingleTap;
+                    StartCoroutine(SingleOrDouble());
                 }
-            }
-
-            //Check for hold
-            if (touchDuration >= holdTime)
-            {
-                Debug.Log("Hold");
-                touchType = TouchType.Hold;
-            }
-        }
+            }//end of touchphase.ended
+        }//if no touch detected
         else
         {
             touchDuration = 0.0f;
@@ -104,6 +98,7 @@ public class TouchControls : MonoBehaviour
     IEnumerator SingleOrDouble()
     {
         yield return new WaitForSeconds(0.3f);
+        StopCoroutine(SingleOrDouble());
         if (touch.tapCount == 1)
         {
             Debug.Log("Single tap");
@@ -111,7 +106,6 @@ public class TouchControls : MonoBehaviour
         }
         else if (touch.tapCount == 2)
         {
-            StopCoroutine(SingleOrDouble());
             Debug.Log("Double tap");
             touchType = TouchType.DoubleTap;
         }
