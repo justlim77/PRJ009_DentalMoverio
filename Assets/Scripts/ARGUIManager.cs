@@ -35,7 +35,7 @@ public class ARGUIManager : MonoBehaviour
         if(Instance == null)
             Instance = this;
 
-        Core.SubscribeEvent("OnOpenPanel", OnPanelOpened);
+        Core.SubscribeEvent("OnPanelOpened", OnPanelOpened);
         Core.SubscribeEvent("OnToggleBars", OnToggleBars);
     }
 
@@ -96,6 +96,7 @@ public class ARGUIManager : MonoBehaviour
                 MoverioCameraController controller = MoverioCameraController.Instance;
                 bool muted = controller.GetCurrentMuteState();
                 controller.SetCurrentMuteType(!muted);
+                Debug.Log("Display/Audio mute: " + muted);
                 break;
         }
     }

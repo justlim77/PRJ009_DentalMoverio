@@ -322,8 +322,6 @@ public class MoverioController : MonoBehaviour {
 			
 			OnMoverioStateChange(eType);
 		}
-
-
 	}
 
 

@@ -22,6 +22,7 @@ public class TouchControls : MonoBehaviour
     private Vector3 fp;                     //First touch position
     private Vector3 lp;                     //Last touch position
     float dragDistance;                     //minimum distance for a swipe to be registered
+    private WaitForSeconds tapTimeWait;
 
     Touch touch;
     TouchType touchType = TouchType.None;
@@ -34,7 +35,8 @@ public class TouchControls : MonoBehaviour
 
     void Start()
     {
-        dragDistance = Screen.height * dragRatio * 0.01f; //dragDistance is 15% height of the screen
+        dragDistance = Screen.height * dragRatio * 0.01f;   //dragDistance is 15% height of the screen
+        tapTimeWait = new WaitForSeconds(tapTimeWindow);    // interval for registering 2nd tap
     }
 
     void Update()
@@ -56,18 +58,18 @@ public class TouchControls : MonoBehaviour
             else if (touch.phase == TouchPhase.Stationary)
             {
                 //Check for hold
-                if (touchDuration >= holdTime)
-                {
-                    Debug.Log("Hold");
-                    touchType = TouchType.Hold;
-                }
+                //if (touchDuration >= holdTime)
+                //{
+                //    Debug.Log("Hold");
+                //    touchType = TouchType.Hold;
+                //}
             }
             else if (touch.phase == TouchPhase.Ended) //check if the finger is removed from the screen
             {
                 lp = touch.position;  //last touch position. Ommitted if you use list
 
                 //Check if drag distance is greater than 20% of the screen height
-                if ((Mathf.Abs(lp.x - fp.x) > dragDistance || Mathf.Abs(lp.y - fp.y) > dragDistance) && touchDuration < holdTime)
+                if ((Mathf.Abs(lp.x - fp.x) > dragDistance || Mathf.Abs(lp.y - fp.y) > dragDistance) /*&& touchDuration < holdTime*/)
                 {//It's a drag
                  //check if the drag is vertical or horizontal
                     if (Mathf.Abs(lp.x - fp.x) > Mathf.Abs(lp.y - fp.y))
@@ -110,14 +112,13 @@ public class TouchControls : MonoBehaviour
         }
 
         // Fire GestureDetected event
-        if(!touchType.Equals(TouchType.None))
+        if(!touchType.Equals(TouchType.None) && !touchType.Equals(TouchType.SingleTap))
             OnGestureDetected(touchType);
     }
 
     IEnumerator SingleOrDouble()
     {
-        yield return new WaitForSeconds(0.3f);
-        StopCoroutine(SingleOrDouble());
+        yield return tapTimeWait;
         if (touch.tapCount == 1)
         {
             Debug.Log("Single tap");
@@ -125,6 +126,7 @@ public class TouchControls : MonoBehaviour
         }
         else if (touch.tapCount == 2)
         {
+            StopAllCoroutines();
             Debug.Log("Double tap");
             touchType = TouchType.DoubleTap;
         }
