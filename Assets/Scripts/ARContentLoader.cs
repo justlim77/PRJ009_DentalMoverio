@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
 using System.Collections;
+using System;
 
 public class ARContentLoader : MonoBehaviour
 {
@@ -59,19 +60,19 @@ public class ARContentLoader : MonoBehaviour
     {
         print("Fetching Content from: " + content.URL);
         string url = content.URL;
-        MovieTexture tex = new MovieTexture();
+        //MovieTexture tex = new MovieTexture();
         WWW www = new WWW(url);
         while (www.isDone == false)
         {
             yield return null;
         }
-        tex = www.movie;        
-        while (tex.isReadyToPlay == false)
-        {
-            yield return 0;
-        }
+        //tex = www.movie;        
+        //while (tex.isReadyToPlay == false)
+        //{
+        //    yield return 0;
+        //}
           
-        content.MovieTex = tex;
+        //content.MovieTex = tex;
 
         itemsLoaded++;
         Core.BroadcastEvent("OnUpdateProgress", this, Progress);
@@ -127,5 +128,5 @@ public class ImageContent
 public class VideoContent
 {
     public string URL;
-    public MovieTexture MovieTex;
+    //public MovieTexture MovieTex;
 }

@@ -1,8 +1,17 @@
 ﻿using UnityEngine;
 using System.Collections;
+using System;
+
+public class GestureDetectedEventArgs : EventArgs
+{
+    public TouchType TouchType { get; set; }
+}
 
 public class TouchControls : MonoBehaviour
 {
+    public delegate void GestureDetectedEventHandler(object source, GestureDetectedEventArgs e);    
+    public static event GestureDetectedEventHandler GestureDetected; 
+
     [Header("Percentage")]
     [Range(1, 100)]
     [SerializeField] float dragRatio;       //minimum distance for a swipe to be registered
@@ -16,6 +25,12 @@ public class TouchControls : MonoBehaviour
 
     Touch touch;
     TouchType touchType = TouchType.None;
+
+    protected virtual void OnGestureDetected(TouchType type)
+    {
+        if (GestureDetected != null)
+            GestureDetected(this, new GestureDetectedEventArgs() { TouchType = type });
+    }
 
     void Start()
     {
@@ -93,6 +108,10 @@ public class TouchControls : MonoBehaviour
             touchDuration = 0.0f;
             touchType = TouchType.None;
         }
+
+        // Fire GestureDetected event
+        if(!touchType.Equals(TouchType.None))
+            OnGestureDetected(touchType);
     }
 
     IEnumerator SingleOrDouble()

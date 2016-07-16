@@ -26,7 +26,7 @@ public class ARGUIPanel : MonoBehaviour
 
     public void OpenPanel()
     {
-        Core.BroadcastEvent("OnOpenPanel", this, this);
+        Core.BroadcastEvent("OnPanelOpened", this, this);
         _canvasGroup.alpha = 1;
         _canvasGroup.blocksRaycasts = true;
     }
