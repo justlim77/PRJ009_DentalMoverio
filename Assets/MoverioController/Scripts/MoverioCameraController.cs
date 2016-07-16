@@ -74,14 +74,14 @@ public class MoverioCameraController : MonoBehaviour
 		    case MoverioEventType.Display3DOn:
 			    SetCurrentDisplayType(MoverioDisplayType.Display3D);
 			    break;
-            case MoverioEventType.MuteDisplayOff:
-                SetCurrentMuteType(false);
-                break;
-            case MoverioEventType.MuteDisplayOn:
-                SetCurrentMuteType(true);
-                break;
+            //case MoverioEventType.MuteDisplayOff:
+            //    SetCurrentMuteType(false);
+            //    break;
+            //case MoverioEventType.MuteDisplayOn:
+            //    SetCurrentMuteType(true);
+            //    break;
         }
-	}
+    }
 
 	public MoverioDisplayType GetCurrentDisplayState()
 	{
@@ -116,8 +116,11 @@ public class MoverioCameraController : MonoBehaviour
 
         MoverioController controller = MoverioController.Instance;
 
-        controller.MuteAudio(_muteState);
         controller.MuteDisplay(_muteState);
+        controller.MuteAudio(_muteState);
+
+        int brightness = _muteState ? 0 : 20;
+        controller.SetDisplayBrightness(brightness);
 
     }
 }

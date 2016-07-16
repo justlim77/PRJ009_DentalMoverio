@@ -2,6 +2,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using System.Collections;
 using System;
+using System.IO;
 
 public class ARGUIManager : MonoBehaviour
 {
@@ -49,7 +50,8 @@ public class ARGUIManager : MonoBehaviour
         btnMiracast.onClick.AddListener(() => LaunchFeed());
         btnSnapshot.onClick.AddListener(() => SnapShot());
 
-        TouchControls.GestureDetected += OnGestureDetected;
+        //TouchControls.GestureDetected += OnGestureDetected;
+        InputControls.GestureDetected += OnGestureDetected;
 
         if (TopBar != null)
         { 
@@ -192,10 +194,15 @@ public class ARGUIManager : MonoBehaviour
         ScreenCapture capture = GetComponent<ScreenCapture>();
 
         string filePath;
-#if UNITY_ANDROID
-        filePath = "/mnt/sdcard/DCIM/Images/" + "DentalAR_" + capture.GetFileName(resolution.width, resolution.height);
+        string subPath;
+#if UNITY_ANDROID && !UNITY_EDITOR
+        subPath = "/mnt/sdcard/DCIM/Images/";
+        filePath = subPath + "DentalAR_" + capture.GetFileName(resolution.width, resolution.height);
 #elif UNITY_EDITOR
-        filePath = Application.dataPath + "/Screenshots/" + capture.GetFileName(resolution.width, resolution.height);
+        subPath = Application.dataPath + "/Screenshots/";
+        if (!Directory.Exists(subPath))
+            Directory.CreateDirectory(subPath);
+        filePath = subPath + capture.GetFileName(resolution.width, resolution.height);
 #endif
         Debug.Log("File path: " + filePath);
         capture.SaveScreenshot(CaptureMethod.ReadPixels_Asynch, filePath);
