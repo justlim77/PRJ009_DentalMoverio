@@ -15,28 +15,35 @@ public class ARGUIManager : MonoBehaviour
     public static event PanelChangedEventHandler PanelChanged;
     public static ARGUIManager Instance { get; private set; }
 
-    public ARGUIPanel[] ARGUIPanels;
-    [Header("Bottom Panel")]
+    [SerializeField] ARGUIPanel[] ARGUIPanels;
+    [Header("Content Panels")]
+    [SerializeField] ARGUIPanel FacialPanel;
+    [SerializeField] ARGUIPanel RadiographPanel;
+    [SerializeField] ARGUIPanel VideoPanel;
+    [SerializeField] ARGUIPanel CameraPanel;
+    [SerializeField] ARGUIPanel HomePanel;
+    [SerializeField] GameObject MidPanel;
+    [SerializeField] ARGUIPanel MutePanel;
+    [Header("Buttons")]
     [SerializeField] Button btnFacial;
-    [SerializeField] Button btnRadiography;
+    [SerializeField] Button btnRadiograph;
     [SerializeField] Button btnVideo;
     [SerializeField] Button btnCamera;
-    [Header("General")]
     [SerializeField] Button btnMenu;
+    [Header("General")]
     [SerializeField] Button btnLoad;
-    [SerializeField] Button btnSnapshot;
     [SerializeField] GameObject TopBar;
     [SerializeField] GameObject BotBar;
-    [SerializeField] ARGUIPanel HomePanel;
-    [SerializeField] ARGUIPanel MutePanel;
-
-    public Image cameraPlane;
-
+    [SerializeField] float panelSlideSpeed = 5.0f;
+    [Header("Camera")]
+    [SerializeField] Image cameraPlane;
     [SerializeField] Resolution resolution;
+    [SerializeField] Button btnSnapshot;
+
     WebCamDevice device;
     WebCamTexture camTex;
-
-    CanvasGroup _topBarCanvasGroup, _botBarCanvasGroup, _muteCanvasGroup;
+    CanvasGroup _topBarCanvasGroup, _botBarCanvasGroup;
+    RectTransform _midPanelRectTrans, _homePanelRectTrans;
     int _currentPanelIdx;
 
     protected virtual void OnPanelChanged(PanelType type)
@@ -56,12 +63,23 @@ public class ARGUIManager : MonoBehaviour
 
     void Start ()
     {
+        btnMenu.onClick.AddListener(() => HomePanel.OpenPanel());
         btnMenu.onClick.AddListener(() => OnBarsToggled(this, false));
+
         btnLoad.onClick.AddListener(() => StartApp());
+
+        btnFacial.onClick.AddListener(() => FacialPanel.OpenPanel());
         btnFacial.onClick.AddListener(() => StopFeed());
-        btnRadiography.onClick.AddListener(() => StopFeed());
+
+        btnRadiograph.onClick.AddListener(() => RadiographPanel.OpenPanel());
+        btnRadiograph.onClick.AddListener(() => StopFeed());
+
+        btnVideo.onClick.AddListener(() => VideoPanel.OpenPanel());
         btnVideo.onClick.AddListener(() => StopFeed());
+
+        btnCamera.onClick.AddListener(() => CameraPanel.OpenPanel());
         btnCamera.onClick.AddListener(() => LaunchFeed());
+
         btnSnapshot.onClick.AddListener(() => SnapShot());
 
         //TouchControls.GestureDetected += OnGestureDetected;
@@ -77,12 +95,6 @@ public class ARGUIManager : MonoBehaviour
         {
             _botBarCanvasGroup = BotBar.GetComponent<CanvasGroup>();
             _botBarCanvasGroup.alpha = 0;   
-        }
-
-        if (MutePanel != null)
-        {
-            _muteCanvasGroup = MutePanel.GetComponent<CanvasGroup>();
-            CanvasMuteType = false;
         }
 
         try
@@ -102,7 +114,16 @@ public class ARGUIManager : MonoBehaviour
         HomePanel.transform.SetAsLastSibling();
         MutePanel.transform.SetAsLastSibling();
 
-        HomePanel.OpenPanel();
+        //HomePanel.OpenPanel();
+        _homePanelRectTrans = HomePanel.GetComponent<RectTransform>();
+        _homePanelRectTrans.anchoredPosition = Vector2.zero;            //Set home panel to center
+
+        MutePanel.SetActive(false);
+        MutePanel.GetComponent<RectTransform>().anchoredPosition = Vector2.zero;    //Set mute panel to center
+
+        //Setup scrollable mid panel
+        _midPanelRectTrans = MidPanel.GetComponent<RectTransform>();
+        MidPanel.GetComponent<ScrollRect>().enabled = false;
     }
 
     private void OnGestureDetected(object source, GestureDetectedEventArgs e)
@@ -135,21 +156,28 @@ public class ARGUIManager : MonoBehaviour
         set {
             _canvasMuteType = value;
 
-            if (_muteCanvasGroup != null)
-            {
-                _muteCanvasGroup.alpha = value ? 1 : 0;
-            }
-            else
-                Debug.LogWarning("No main canvas group found!");
+            MutePanel.SetActive(value);
         }
     }
 
+    bool _started = false;
     void StartApp()
     {
         ShowBar(_topBarCanvasGroup);
         ShowBar(_botBarCanvasGroup);
 
-        HomePanel.SetAlpha(0);
+        //Refresh automatic layout for images
+        FacialPanel.GetComponent<HorizontalOrVerticalLayoutGroup>().enabled = false;
+        FacialPanel.GetComponent<HorizontalOrVerticalLayoutGroup>().enabled = true;
+        RadiographPanel.GetComponent<HorizontalOrVerticalLayoutGroup>().enabled = false;
+        RadiographPanel.GetComponent<HorizontalOrVerticalLayoutGroup>().enabled = true;
+
+        //HomePanel.SetActive(false);
+        _homeTargetPos = HomePanel.GetInitialPosition();
+
+        MidPanel.GetComponent<ScrollRect>().enabled = true;
+
+        _started = true;
     }
 
     void LaunchFeed()
@@ -170,7 +198,7 @@ public class ARGUIManager : MonoBehaviour
     {
         btnMenu.onClick.RemoveAllListeners();
         btnFacial.onClick.RemoveAllListeners();
-        btnRadiography.onClick.RemoveAllListeners();
+        btnRadiograph.onClick.RemoveAllListeners();
         btnVideo.onClick.RemoveAllListeners();
         btnCamera.onClick.RemoveAllListeners();
 
@@ -188,23 +216,26 @@ public class ARGUIManager : MonoBehaviour
 
             foreach (var ARPanel in ARGUIPanels)
             {
-                ARPanel.SetAlpha(0);
-                ARPanel.BlocksRaycasts(false);
+                //ARPanel.SetActive(false);
             }
 
-            panel.SetAlpha(1);
-            panel.BlocksRaycasts(true);
+            panel.SetActive(true);
 
             switch (panel.panelType)
             {
                 case PanelType.Camera:
+                    _targetPos = panel.GetInversedInitialPos();
                     LaunchFeed();
                     break;
                 case PanelType.Facial:
                 case PanelType.Radiograph:
                 case PanelType.Video:
+                    StopFeed();
+                    _targetPos = panel.GetInversedInitialPos();
+                    break;
                 case PanelType.Home:
                     StopFeed();
+                    _homeTargetPos = Vector2.zero;
                     break;
             }
 
@@ -216,6 +247,29 @@ public class ARGUIManager : MonoBehaviour
         }
 
         return null;
+    }
+
+    Vector2 _targetPos, _homeTargetPos;
+    void Update()
+    {
+        //Slide content panels
+        if (!InputControls.Holding)
+        {
+            Vector2 currentPos = _midPanelRectTrans.anchoredPosition;
+            if (currentPos != _targetPos)
+            {
+                Vector2 lerpToPos = Vector2.Lerp(currentPos, _targetPos, panelSlideSpeed * Time.deltaTime);
+                _midPanelRectTrans.anchoredPosition = lerpToPos;
+            }
+        }
+
+        //Slide home panel
+        Vector2 homeCurrentPos = _homePanelRectTrans.anchoredPosition;
+        if (homeCurrentPos != _homeTargetPos)
+        {
+            Vector2 lerpToPos = Vector2.Lerp(homeCurrentPos, _homeTargetPos, panelSlideSpeed * Time.deltaTime);
+            _homePanelRectTrans.anchoredPosition = lerpToPos;
+        }
     }
 
     object OnBarsToggled(object sender, object args)
@@ -260,6 +314,9 @@ public class ARGUIManager : MonoBehaviour
 
     void NextPanel()
     {
+        if (!_started)
+            return;
+
         int nextIdx = _currentPanelIdx;
         nextIdx++;
         if (nextIdx > ARGUIPanels.Length - 1)
@@ -278,6 +335,9 @@ public class ARGUIManager : MonoBehaviour
     }
     void PreviousPanel()
     {
+        if (!_started)
+            return;
+
         int nextIdx = _currentPanelIdx;
         nextIdx--;
         if (nextIdx < 0)

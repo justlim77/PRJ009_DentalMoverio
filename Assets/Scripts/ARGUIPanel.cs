@@ -1,9 +1,11 @@
 ﻿using UnityEngine;
+using UnityEngine.UI;
 using System.Collections;
 
 [System.Serializable]
 public enum PanelType
 {
+    Blocker,
     Home,
     Facial,
     Radiograph,
@@ -16,36 +18,61 @@ public class ARGUIPanel : MonoBehaviour
 {
     public PanelType panelType = PanelType.Home;
 
+    Vector2 _initialPos;
     CanvasGroup _canvasGroup;
+    RectTransform _rectTrans;
+    HorizontalOrVerticalLayoutGroup _layoutGroup;
 
     void Awake()
     {
         _canvasGroup = this.GetComponent<CanvasGroup>();
         if (_canvasGroup == null)
             _canvasGroup = this.gameObject.AddComponent<CanvasGroup>();
+
+        _rectTrans = this.GetComponent<RectTransform>();
+        _initialPos = _rectTrans.anchoredPosition;
+
+        _layoutGroup = this.GetComponent<HorizontalOrVerticalLayoutGroup>();
     }
 
-	// Use this for initialization
     void Start()
     {
-        if(this.GetComponent<RectTransform>() != null)
-            this.GetComponent<RectTransform>().anchoredPosition = Vector2.zero;
+        //if(this.GetComponent<RectTransform>() != null)
+        //    this.GetComponent<RectTransform>().anchoredPosition = Vector2.zero;
     }
 
     public void OpenPanel()
     {
         Core.BroadcastEvent("OnPanelOpened", this, this);
-        _canvasGroup.alpha = 1;
-        _canvasGroup.blocksRaycasts = true;
+        SetActive(true);
     }
 
-    public void SetAlpha(float alpha)
+    public void SetActive(bool value)
     {
-        _canvasGroup.alpha = alpha;
+        _canvasGroup.alpha = value ? 1 : 0;
+        _canvasGroup.blocksRaycasts = value;
+
+        Refresh();
     }
 
-    public void BlocksRaycasts(bool val)
+    public Vector2 GetInitialPosition()
     {
-        _canvasGroup.blocksRaycasts = val;
+        return _initialPos;
     }
+
+    public Vector2 GetInversedInitialPos()
+    {
+        return new Vector2(_initialPos.x * -1, _initialPos.y);
+    }
+
+    public void Refresh()
+    {
+        //Perform quick re-layout
+        if (_layoutGroup != null)
+        {
+            _layoutGroup.enabled = false;
+            _layoutGroup.enabled = true;
+        }
+    }
+
 }

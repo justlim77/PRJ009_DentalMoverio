@@ -48,6 +48,8 @@ public class InputControls : MonoBehaviour
     }
 
     bool timerActive = false;
+    public static bool Holding { get; private set; }
+
 	void Update ()
     {
         if (timerActive)
@@ -63,6 +65,7 @@ public class InputControls : MonoBehaviour
         {
             timerActive = false;
             from = Input.mousePosition;
+            Holding = true;
         }
         if (Input.GetButtonUp("Fire1")) //TouchPhase.Ended
         {
@@ -104,6 +107,8 @@ public class InputControls : MonoBehaviour
             // Fire GestureDetected event
             if (!touchType.Equals(TouchType.None))
                 OnGestureDetected(touchType);
+
+            Holding = false;    // release holding bool
         }
 
         if (Input.GetButton("Fire1"))
