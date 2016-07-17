@@ -1,17 +1,28 @@
 ﻿using UnityEngine;
 using System.Collections;
 
+[System.Serializable]
+public enum PanelType
+{
+    Home,
+    Facial,
+    Radiograph,
+    Video,
+    Camera
+}
+
 [RequireComponent(typeof(CanvasRenderer))]
 public class ARGUIPanel : MonoBehaviour 
 {
-    public bool showOnStart = false;
-    public string header;
+    public PanelType panelType = PanelType.Home;
 
     CanvasGroup _canvasGroup;
 
     void Awake()
     {
         _canvasGroup = this.GetComponent<CanvasGroup>();
+        if (_canvasGroup == null)
+            _canvasGroup = this.gameObject.AddComponent<CanvasGroup>();
     }
 
 	// Use this for initialization
@@ -19,9 +30,6 @@ public class ARGUIPanel : MonoBehaviour
     {
         if(this.GetComponent<RectTransform>() != null)
             this.GetComponent<RectTransform>().anchoredPosition = Vector2.zero;
-
-        _canvasGroup.alpha = showOnStart ? 1 : 0;
-        _canvasGroup.blocksRaycasts = showOnStart ? true : false;
     }
 
     public void OpenPanel()

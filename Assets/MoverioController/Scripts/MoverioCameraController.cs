@@ -118,9 +118,5 @@ public class MoverioCameraController : MonoBehaviour
 
         controller.MuteDisplay(_muteState);
         controller.MuteAudio(_muteState);
-
-        int brightness = _muteState ? 0 : 20;
-        controller.SetDisplayBrightness(brightness);
-
     }
 }

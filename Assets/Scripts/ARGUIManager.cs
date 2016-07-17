@@ -1,11 +1,18 @@
 using UnityEngine;
 using UnityEngine.UI;
-using System.Collections;
 using System;
 using System.IO;
+using System.Collections;
+
+public class PanelChangedEventArgs : EventArgs
+{
+    public PanelType PanelType { get; set; }
+}
 
 public class ARGUIManager : MonoBehaviour
 {
+    public delegate void PanelChangedEventHandler(object sender, PanelChangedEventArgs e);
+    public static event PanelChangedEventHandler PanelChanged;
     public static ARGUIManager Instance { get; private set; }
 
     public ARGUIPanel[] ARGUIPanels;
@@ -13,23 +20,30 @@ public class ARGUIManager : MonoBehaviour
     [SerializeField] Button btnFacial;
     [SerializeField] Button btnRadiography;
     [SerializeField] Button btnVideo;
-    [SerializeField] Button btnMiracast;
+    [SerializeField] Button btnCamera;
     [Header("General")]
     [SerializeField] Button btnMenu;
     [SerializeField] Button btnLoad;
     [SerializeField] Button btnSnapshot;
     [SerializeField] GameObject TopBar;
     [SerializeField] GameObject BotBar;
-    [SerializeField] GameObject StartPanel;
+    [SerializeField] ARGUIPanel HomePanel;
+    [SerializeField] ARGUIPanel MutePanel;
 
-    public Image planeRenderer;
+    public Image cameraPlane;
 
     [SerializeField] Resolution resolution;
     WebCamDevice device;
     WebCamTexture camTex;
 
-    CanvasGroup _topBarCanvasGroup, _botBarCanvasGroup;
+    CanvasGroup _topBarCanvasGroup, _botBarCanvasGroup, _muteCanvasGroup;
     int _currentPanelIdx;
+
+    protected virtual void OnPanelChanged(PanelType type)
+    {
+        if (PanelChanged != null)
+            PanelChanged(this, new PanelChangedEventArgs() { PanelType = type });
+    }
 
     void Awake()
     {
@@ -37,21 +51,21 @@ public class ARGUIManager : MonoBehaviour
             Instance = this;
 
         Core.SubscribeEvent("OnPanelOpened", OnPanelOpened);
-        Core.SubscribeEvent("OnToggleBars", OnToggleBars);
+        Core.SubscribeEvent("OnToggleBars", OnBarsToggled);
     }
 
     void Start ()
     {
-        btnMenu.onClick.AddListener(() => OnToggleBars(this, false));
+        btnMenu.onClick.AddListener(() => OnBarsToggled(this, false));
         btnLoad.onClick.AddListener(() => StartApp());
         btnFacial.onClick.AddListener(() => StopFeed());
         btnRadiography.onClick.AddListener(() => StopFeed());
         btnVideo.onClick.AddListener(() => StopFeed());
-        btnMiracast.onClick.AddListener(() => LaunchFeed());
+        btnCamera.onClick.AddListener(() => LaunchFeed());
         btnSnapshot.onClick.AddListener(() => SnapShot());
 
         //TouchControls.GestureDetected += OnGestureDetected;
-        InputControls.GestureDetected += OnGestureDetected;
+        InputControls.GestureDetected += OnGestureDetected;     //Moverio 4.5 ~ 4.6 with Input.GetMouse events
 
         if (TopBar != null)
         { 
@@ -63,6 +77,12 @@ public class ARGUIManager : MonoBehaviour
         {
             _botBarCanvasGroup = BotBar.GetComponent<CanvasGroup>();
             _botBarCanvasGroup.alpha = 0;   
+        }
+
+        if (MutePanel != null)
+        {
+            _muteCanvasGroup = MutePanel.GetComponent<CanvasGroup>();
+            CanvasMuteType = false;
         }
 
         try
@@ -77,10 +97,13 @@ public class ARGUIManager : MonoBehaviour
         if(device.name != null)
             camTex = new WebCamTexture(device.name, resolution.width, resolution.height);
 
-        planeRenderer.material.mainTexture = camTex;
+        cameraPlane.material.mainTexture = camTex;
 
-        StartPanel.transform.SetAsLastSibling();
-	}
+        HomePanel.transform.SetAsLastSibling();
+        MutePanel.transform.SetAsLastSibling();
+
+        HomePanel.OpenPanel();
+    }
 
     private void OnGestureDetected(object source, GestureDetectedEventArgs e)
     {
@@ -97,9 +120,27 @@ public class ARGUIManager : MonoBehaviour
             case TouchType.DoubleTap:
                 MoverioCameraController controller = MoverioCameraController.Instance;
                 bool muted = controller.GetCurrentMuteState();
+                CanvasMuteType = !CanvasMuteType;
                 controller.SetCurrentMuteType(!muted);
-                Debug.Log("Display/Audio mute: " + muted);
                 break;
+        }
+    }
+
+    bool _canvasMuteType = false;
+    public bool CanvasMuteType
+    {
+        get {
+            return _canvasMuteType;
+        }
+        set {
+            _canvasMuteType = value;
+
+            if (_muteCanvasGroup != null)
+            {
+                _muteCanvasGroup.alpha = value ? 1 : 0;
+            }
+            else
+                Debug.LogWarning("No main canvas group found!");
         }
     }
 
@@ -108,11 +149,7 @@ public class ARGUIManager : MonoBehaviour
         ShowBar(_topBarCanvasGroup);
         ShowBar(_botBarCanvasGroup);
 
-        ARGUIPanel panel = StartPanel.GetComponent<ARGUIPanel>();
-        if (panel != null)
-        {
-            panel.SetAlpha(0);
-        }
+        HomePanel.SetAlpha(0);
     }
 
     void LaunchFeed()
@@ -135,7 +172,7 @@ public class ARGUIManager : MonoBehaviour
         btnFacial.onClick.RemoveAllListeners();
         btnRadiography.onClick.RemoveAllListeners();
         btnVideo.onClick.RemoveAllListeners();
-        btnMiracast.onClick.RemoveAllListeners();
+        btnCamera.onClick.RemoveAllListeners();
 
         TouchControls.GestureDetected -= OnGestureDetected;
 
@@ -158,17 +195,30 @@ public class ARGUIManager : MonoBehaviour
             panel.SetAlpha(1);
             panel.BlocksRaycasts(true);
 
+            switch (panel.panelType)
+            {
+                case PanelType.Camera:
+                    LaunchFeed();
+                    break;
+                case PanelType.Facial:
+                case PanelType.Radiograph:
+                case PanelType.Video:
+                case PanelType.Home:
+                    StopFeed();
+                    break;
+            }
+
             _currentPanelIdx = Array.IndexOf(ARGUIPanels, panel);
             Debug.Log("Current panel index: " + _currentPanelIdx);
 
-            string msg = panel.header;
+            string msg = panel.panelType.ToString();
             Core.BroadcastEvent("OnUpdateHeader", this, msg);
         }
 
         return null;
     }
 
-    object OnToggleBars(object sender, object args)
+    object OnBarsToggled(object sender, object args)
     {
         if (args is bool)
         {
@@ -196,7 +246,7 @@ public class ARGUIManager : MonoBehaviour
         string filePath;
         string subPath;
 #if UNITY_ANDROID && !UNITY_EDITOR
-        subPath = "/mnt/sdcard/DCIM/Images/";
+        subPath = "/mnt/sdcard/DCIM/Camera/";
         filePath = subPath + "DentalAR_" + capture.GetFileName(resolution.width, resolution.height);
 #elif UNITY_EDITOR
         subPath = Application.dataPath + "/Screenshots/";
@@ -222,6 +272,8 @@ public class ARGUIManager : MonoBehaviour
         if (panel != null)
         {
             OnPanelOpened(this, panel);
+            PanelType panelType = panel.panelType;
+            OnPanelChanged(panelType);
         }
     }
     void PreviousPanel()
@@ -238,6 +290,8 @@ public class ARGUIManager : MonoBehaviour
         if (panel != null)
         {
             OnPanelOpened(this, panel);
+            PanelType panelType = panel.panelType;
+            OnPanelChanged(panelType);
         }
     }
 }
@@ -247,4 +301,10 @@ public struct Resolution
 {
     public int width;
     public int height;
-}                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      
+}
+
+public enum ImageType
+{
+    JPG,
+    PNG
+}
