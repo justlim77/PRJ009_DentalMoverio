@@ -30,6 +30,7 @@ public class ScreenCapture : MonoBehaviour
             SaveScreenshot(CaptureMethod.RenderToTex_Synch, Application.dataPath + "/screen6.png");
     }*/
 
+    public string phoneImagePath;
     public ImageType imageType;
 
     public void SaveScreenshot(CaptureMethod method, string filePath)
@@ -186,8 +187,8 @@ public class ScreenCapture : MonoBehaviour
     public string GetFileName(int width, int height)
     {
         string type = imageType.ToString().ToLower();
-        return string.Format("screen_{0}x{1}_{2}.{3}", width, height,
-            System.DateTime.Now.ToString("yyyy-MM-dd_HH-mm-ss"),
+        return string.Format("IMG_{0}.{1}",
+            System.DateTime.Now.ToString("yyyyMMdd_HHmmss"),
             type);
     }
 }

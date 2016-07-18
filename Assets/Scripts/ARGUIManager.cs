@@ -39,6 +39,7 @@ public class ARGUIManager : MonoBehaviour
     [SerializeField] Image cameraPlane;
     [SerializeField] Resolution resolution;
     [SerializeField] Button btnSnapshot;
+    [SerializeField] string phoneImagePath;
 
     WebCamDevice device;
     WebCamTexture camTex;
@@ -270,6 +271,28 @@ public class ARGUIManager : MonoBehaviour
             Vector2 lerpToPos = Vector2.Lerp(homeCurrentPos, _homeTargetPos, panelSlideSpeed * Time.deltaTime);
             _homePanelRectTrans.anchoredPosition = lerpToPos;
         }
+
+        //Button mapping
+        if (Input.GetKeyDown(KeyCode.Menu)/* || Input.GetKeyDown(KeyCode.Return)*/)
+        {
+            HomePanel.OpenPanel();
+            OnBarsToggled(this, false);
+        }
+
+        if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            PreviousPanel();
+        }
+
+        if (Input.GetKeyDown(KeyCode.LeftArrow))
+        {
+            PreviousPanel();
+        }
+
+        if (Input.GetKeyDown(KeyCode.RightArrow))
+        {
+            NextPanel();
+        }
     }
 
     object OnBarsToggled(object sender, object args)
@@ -300,8 +323,8 @@ public class ARGUIManager : MonoBehaviour
         string filePath;
         string subPath;
 #if UNITY_ANDROID && !UNITY_EDITOR
-        subPath = "/mnt/sdcard/DCIM/Camera/";
-        filePath = subPath + "DentalAR_" + capture.GetFileName(resolution.width, resolution.height);
+        subPath = phoneImagePath;
+        filePath = subPath + capture.GetFileName(resolution.width, resolution.height);
 #elif UNITY_EDITOR
         subPath = Application.dataPath + "/Screenshots/";
         if (!Directory.Exists(subPath))

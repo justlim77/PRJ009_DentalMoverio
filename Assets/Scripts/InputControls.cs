@@ -12,6 +12,19 @@ public class InputControls : MonoBehaviour
     public delegate void GestureDetectedEventHandler(object source, GestureDetectedEventArgs e);
     public static event GestureDetectedEventHandler GestureDetected;
 
+
+    [Header("Button mapping")]
+    public KeyCode FirstTouch = KeyCode.Mouse0;
+    public KeyCode SecondTouch = KeyCode.Mouse1;
+    public KeyCode ScrollRight = KeyCode.RightArrow;
+    public KeyCode ScrollLeft = KeyCode.LeftArrow;
+    public KeyCode ScrollUp = KeyCode.UpArrow;
+    public KeyCode ScrollDown = KeyCode.DownArrow;
+    public KeyCode Back = KeyCode.Escape;
+    public KeyCode Settings = KeyCode.Menu;
+    public KeyCode VolumeUp = (KeyCode)24;
+    public KeyCode VolumeDown = (KeyCode)25;
+
     [Header("Percentage")]
     [Range(1, 100)]
     [SerializeField]
@@ -52,6 +65,14 @@ public class InputControls : MonoBehaviour
 
 	void Update ()
     {
+        /* For debugging key input
+        //foreach (KeyCode kcode in Enum.GetValues(typeof(KeyCode)))
+        //{
+        //    if (Input.GetKeyDown(kcode))
+        //        Debugger.Instance.Log("KeyCode down: " + kcode.ToString());
+        //}
+        */
+
         if (timerActive)
             touchDuration += Time.deltaTime;
 
@@ -61,13 +82,13 @@ public class InputControls : MonoBehaviour
         else
             tapCount = 0;
 
-        if (Input.GetButtonDown("Fire1"))   // TouchPhase.Began
+        if (Input.GetKeyDown(FirstTouch))   // TouchPhase.Began
         {
             timerActive = false;
             from = Input.mousePosition;
             Holding = true;
         }
-        if (Input.GetButtonUp("Fire1")) //TouchPhase.Ended
+        if (Input.GetKeyUp(FirstTouch)) //TouchPhase.Ended
         {
             //single/double tap
             if (tapTimeWindow > 0)
@@ -85,21 +106,21 @@ public class InputControls : MonoBehaviour
 
             to = Input.mousePosition;
 
-            if ((Mathf.Abs(to.x - from.x) > dragDistance))
-            {
-                if (to.x > from.x)
-                    touchType = TouchType.Right;
-                else
-                    touchType = TouchType.Left;
-            }
-            else
-            {//if not drag, check for single, double
-                //if (touchDuration < tapTimeWindow)
-                //{
-                //    touchType = TouchType.DoubleTap;
-                //    tapCount = 0;
-                //}
-            }
+            //if ((Mathf.Abs(to.x - from.x) > dragDistance))
+            //{
+            //    if (to.x > from.x)
+            //        touchType = TouchType.Right;
+            //    else
+            //        touchType = TouchType.Left;
+            //}
+            //else
+            //{//if not drag, check for single, double
+            //    //if (touchDuration < tapTimeWindow)
+            //    //{
+            //    //    touchType = TouchType.DoubleTap;
+            //    //    tapCount = 0;
+            //    //}
+            //}
 
             //Reset parameters
             touchDuration = 0;
@@ -111,9 +132,19 @@ public class InputControls : MonoBehaviour
             Holding = false;    // release holding bool
         }
 
-        if (Input.GetButton("Fire1"))
+        if (Input.GetKey(FirstTouch))
         {
             touchDuration += Time.deltaTime;
+        }
+
+        if (Input.GetKeyDown(ScrollRight))
+        {
+            touchType = TouchType.Right;
+        }
+
+        if (Input.GetKeyDown(ScrollLeft))
+        {
+            touchType = TouchType.Left;
         }
 
         //if(swiping == true && from == to)

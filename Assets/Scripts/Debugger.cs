@@ -2,6 +2,7 @@
 using System.Collections;
 using UnityEngine.UI;
 using System.Collections.Generic;
+using System.Text;
 
 public class Debugger : MonoBehaviour
 {
@@ -17,8 +18,10 @@ public class Debugger : MonoBehaviour
     public bool enableDebug = true;
     public GameObject debugPanel;
     public Text debugLabel;
+    public Scrollbar scrollbar;
 
     List<string> logList = new List<string>();
+    StringBuilder _sb = new StringBuilder();
 
     void Awake()
     {
@@ -40,7 +43,23 @@ public class Debugger : MonoBehaviour
     {
         string log = obj.ToString();
         logList.Add(log);
-        debugLabel.text += string.Format(">{0}\n", log);
+        _sb.AppendLine(log);
+
+        if (logList.Count > 20)
+        {
+            logList.RemoveRange(0, 20);
+        }
+
+
+        debugLabel.text = "";
+
+        for (int i = 0; i < logList.Count; ++i)
+        {
+            debugLabel.text += string.Format(">{0}\n", logList[i]);
+        }
+
+        //debugLabel.text += string.Format(">{0}\n", log);
+        scrollbar.value = 0;
     }
 
     void EnableDebug(bool val)
