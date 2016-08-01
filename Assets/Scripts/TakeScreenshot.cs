@@ -35,8 +35,8 @@ public class TakeScreenshot : MonoBehaviour
         File.WriteAllBytes("/mnt/sdcard/DCIM/Images/" + "DentalAR " + GetFileName(res.width, res.height, imageType), bytes);
         Debug.Log("New screenshot saved to: " + "/mnt/sdcard/DCIM/Images/" + "DentalAR " + GetFileName(res.width, res.height, imageType));
 #elif UNITY_EDITOR
-        File.WriteAllBytes(Application.dataPath + "/Screenshots/" + GetFileName(res.width, res.height), bytes);
-        Debug.Log("New screenshot saved to: " + Application.dataPath + "/Screenshots/" + GetFileName(res.width, res.height));
+        File.WriteAllBytes(Application.dataPath + "/Screenshots/" + GetFileName(res.width, res.height, imageType), bytes);
+        Debug.Log("New screenshot saved to: " + Application.dataPath + "/Screenshots/" + GetFileName(res.width, res.height, imageType));
 #endif
     }
 }
