@@ -9,7 +9,25 @@ public class ARDirectoryManager : MonoBehaviour
     {
         get 
         {
+            if (_Instance == null)
+                Debug.Log("ARDirectoryManager not yet initialized.");
             return _Instance;
+        }
+    }
+
+    public static string ImageFolderPath
+    {
+        get
+        {
+            string path = Path.Combine(Application.streamingAssetsPath, "images");
+            if (!Directory.Exists(path))
+            {
+                Directory.CreateDirectory(path);
+                Debug.Log("Path not found! Creating folder at " + path);
+            }
+            Debug.Log("Image Folder path located at " + path);
+
+            return path;
         }
     }
 
@@ -111,20 +129,37 @@ public class ARDirectoryManager : MonoBehaviour
         //}
     }
 
+
     void OnDestroy()
     {
         _Instance = null;
     }
 
-	// Use this for initialization
-	void Start ()
+    public static Texture2D[] TextureArray;
+    public static string[] FilePaths;
+    static string _PathPrefix = "";
+
+    public static IEnumerator LoadLocalImages()
     {
-	}
-	
-	// Update is called once per frame
-	void Update () {
-	
-	}
+        string path = ImageFolderPath;
+        _PathPrefix = @"file://";
+
+        FilePaths = Directory.GetFiles(path, "*.jpg");
+        //load all images in default folder as textures
+        TextureArray = new Texture2D[FilePaths.Length];
+
+        int fileAmount = FilePaths.Length;
+        for(int i = 0; i < fileAmount; i++)
+        {
+            string tempPath = _PathPrefix + FilePaths[i];
+            Debug.Log(tempPath);
+            WWW www = new WWW(tempPath);
+            yield return www;
+            Texture2D tex = new Texture2D(4, 4, TextureFormat.DXT1, false);
+            www.LoadImageIntoTexture(tex);
+            TextureArray[i] = tex;
+        }
+    }
 
     bool InitializeDirectory()
     {

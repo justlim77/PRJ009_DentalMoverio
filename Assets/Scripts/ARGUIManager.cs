@@ -17,8 +17,8 @@ public class ARGUIManager : MonoBehaviour
 
     [SerializeField] ARGUIPanel[] ARGUIPanels;
     [Header("Content Panels")]
-    [SerializeField] ARGUIPanel FacialPanel;
-    [SerializeField] ARGUIPanel RadiographPanel;
+    [SerializeField] ARGUIPanel DetailsPanel;
+    //[SerializeField] ARGUIPanel RadiographPanel;
     [SerializeField] ARGUIPanel VideoPanel;
     [SerializeField] ARGUIPanel CameraPanel;
     [SerializeField] ARGUIPanel HomePanel;
@@ -26,7 +26,7 @@ public class ARGUIManager : MonoBehaviour
     [SerializeField] ARGUIPanel MutePanel;
     [Header("Buttons")]
     [SerializeField] Button btnFacial;
-    [SerializeField] Button btnRadiograph;
+    //[SerializeField] Button btnRadiograph;
     [SerializeField] Button btnVideo;
     [SerializeField] Button btnCamera;
     [SerializeField] Button btnMenu;
@@ -69,11 +69,11 @@ public class ARGUIManager : MonoBehaviour
 
         btnLoad.onClick.AddListener(() => StartApp());
 
-        btnFacial.onClick.AddListener(() => FacialPanel.OpenPanel());
+        btnFacial.onClick.AddListener(() => DetailsPanel.OpenPanel());
         btnFacial.onClick.AddListener(() => StopFeed());
 
-        btnRadiograph.onClick.AddListener(() => RadiographPanel.OpenPanel());
-        btnRadiograph.onClick.AddListener(() => StopFeed());
+        //btnRadiograph.onClick.AddListener(() => RadiographPanel.OpenPanel());
+        //btnRadiograph.onClick.AddListener(() => StopFeed());
 
         btnVideo.onClick.AddListener(() => VideoPanel.OpenPanel());
         btnVideo.onClick.AddListener(() => StopFeed());
@@ -168,10 +168,10 @@ public class ARGUIManager : MonoBehaviour
         ShowBar(_botBarCanvasGroup);
 
         //Refresh automatic layout for images
-        FacialPanel.GetComponent<HorizontalOrVerticalLayoutGroup>().enabled = false;
-        FacialPanel.GetComponent<HorizontalOrVerticalLayoutGroup>().enabled = true;
-        RadiographPanel.GetComponent<HorizontalOrVerticalLayoutGroup>().enabled = false;
-        RadiographPanel.GetComponent<HorizontalOrVerticalLayoutGroup>().enabled = true;
+        //DetailsPanel.GetComponent<HorizontalOrVerticalLayoutGroup>().enabled = false;
+        //DetailsPanel.GetComponent<HorizontalOrVerticalLayoutGroup>().enabled = true;
+        //RadiographPanel.GetComponent<HorizontalOrVerticalLayoutGroup>().enabled = false;
+        //RadiographPanel.GetComponent<HorizontalOrVerticalLayoutGroup>().enabled = true;
 
         //HomePanel.SetActive(false);
         _homeTargetPos = HomePanel.GetInitialPosition();
@@ -199,7 +199,7 @@ public class ARGUIManager : MonoBehaviour
     {
         btnMenu.onClick.RemoveAllListeners();
         btnFacial.onClick.RemoveAllListeners();
-        btnRadiograph.onClick.RemoveAllListeners();
+        //btnRadiograph.onClick.RemoveAllListeners();
         btnVideo.onClick.RemoveAllListeners();
         btnCamera.onClick.RemoveAllListeners();
 
@@ -228,8 +228,7 @@ public class ARGUIManager : MonoBehaviour
                     _targetPos = panel.GetInversedInitialPos();
                     LaunchFeed();
                     break;
-                case PanelType.Facial:
-                case PanelType.Radiograph:
+                case PanelType.Details:
                 case PanelType.Video:
                     StopFeed();
                     _targetPos = panel.GetInversedInitialPos();

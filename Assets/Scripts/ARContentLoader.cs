@@ -3,10 +3,18 @@ using UnityEngine.UI;
 using System.Collections;
 using System;
 
+public enum ContentLoadMode
+{
+    Offline,
+    Online
+}
+
 public class ARContentLoader : MonoBehaviour
 {
     public static ARContentLoader Instance { get; private set; }
     public Patient patient;
+
+    public ContentLoadMode LoadMode;
 
     public int itemsToLoad;
     public int itemsLoaded;
@@ -26,7 +34,7 @@ public class ARContentLoader : MonoBehaviour
 
     void Start()
     {
-        Load();
+        //Load();
     }
 
     public void Load()
@@ -43,14 +51,25 @@ public class ARContentLoader : MonoBehaviour
 
     IEnumerator LoadContent(ImageContent content)
     {
-        print("Fetching Content from: " + content.URL);
-        string url = content.URL;
-        Texture2D tex = new Texture2D(4, 4, TextureFormat.DXT1, false);
-        WWW www = new WWW(url);
-        yield return www;
-        www.LoadImageIntoTexture(tex);
-        content.Tex = tex;
-        content.Image.texture = tex;
+        switch (LoadMode)
+        {
+            case ContentLoadMode.Online:
+                print("Fetching Content from: " + content.WebURL);
+                string webURL = content.WebURL;
+                Texture2D tex = new Texture2D(4, 4, TextureFormat.DXT1, false);
+                WWW www = new WWW(webURL);
+                yield return www;
+                www.LoadImageIntoTexture(tex);
+                content.Tex = tex;
+                content.Image.texture = tex;
+                break;
+            case ContentLoadMode.Offline:
+                print("Fetching Content from: " + content.LocalURL);
+                string localURL = content.LocalURL;
+
+                break;
+        }
+
 
         itemsLoaded++;
         Core.BroadcastEvent("OnUpdateProgress", this, Progress);
@@ -58,8 +77,8 @@ public class ARContentLoader : MonoBehaviour
 
     IEnumerator LoadContent(VideoContent content)
     {
-        print("Fetching Content from: " + content.URL);
-        string url = content.URL;
+        print("Fetching Content from: " + content.WebURL);
+        string url = content.WebURL;
         //MovieTexture tex = new MovieTexture();
         WWW www = new WWW(url);
         while (www.isDone == false)
@@ -107,19 +126,22 @@ public class Patient
 [System.Serializable]
 public class ImageContent
 {
-    public string URL;
+    public string WebURL;
+    public string LocalURL;
     public Texture2D Tex;
     public RawImage Image;
 
     public ImageContent()
     {
-        URL = "";
+        WebURL = "";
+        LocalURL = "";
         Tex = null;
     }
 
-    public ImageContent(string url, int width, int height)
+    public ImageContent(string webURL, string localURL, int width, int height)
     {
-        URL = url;
+        WebURL = webURL;
+        LocalURL = localURL;
         Tex = new Texture2D(width, height, TextureFormat.DXT1, false);
     }
 }
@@ -127,6 +149,7 @@ public class ImageContent
 [System.Serializable]
 public class VideoContent
 {
-    public string URL;
+    public string WebURL;
+    public string LocalURL;
     //public MovieTexture MovieTex;
 }

@@ -7,8 +7,7 @@ public enum PanelType
 {
     Blocker,
     Home,
-    Facial,
-    Radiograph,
+    Details,
     Video,
     Camera
 }
@@ -52,7 +51,7 @@ public class ARGUIPanel : MonoBehaviour
         _canvasGroup.alpha = value ? 1 : 0;
         _canvasGroup.blocksRaycasts = value;
 
-        Refresh();
+        //Refresh();
     }
 
     public Vector2 GetInitialPosition()
