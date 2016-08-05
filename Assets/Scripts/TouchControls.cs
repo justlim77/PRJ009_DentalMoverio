@@ -2,11 +2,6 @@
 using System.Collections;
 using System;
 
-public class GestureDetectedEventArgs : EventArgs
-{
-    public TouchType TouchType { get; set; }
-}
-
 public class TouchControls : MonoBehaviour
 {
     public delegate void GestureDetectedEventHandler(object source, GestureDetectedEventArgs e);    

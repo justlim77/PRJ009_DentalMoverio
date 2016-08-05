@@ -136,6 +136,7 @@ public class ARDirectoryManager : MonoBehaviour
     }
 
     public static Texture2D[] TextureArray;
+    public static DetailedImage[] TextureDetails;
     public static string[] FilePaths;
     static string _PathPrefix = "";
 
@@ -145,8 +146,11 @@ public class ARDirectoryManager : MonoBehaviour
         _PathPrefix = @"file://";
 
         FilePaths = Directory.GetFiles(path, "*.jpg");
+
+        string[] titles = new string[FilePaths.Length];
+
         //load all images in default folder as textures
-        TextureArray = new Texture2D[FilePaths.Length];
+        TextureDetails = new DetailedImage[FilePaths.Length];
 
         int fileAmount = FilePaths.Length;
         for(int i = 0; i < fileAmount; i++)
@@ -157,7 +161,13 @@ public class ARDirectoryManager : MonoBehaviour
             yield return www;
             Texture2D tex = new Texture2D(4, 4, TextureFormat.DXT1, false);
             www.LoadImageIntoTexture(tex);
-            TextureArray[i] = tex;
+
+            DetailedImage image = new DetailedImage();
+
+            string title = Path.GetFileNameWithoutExtension(tempPath);
+            image.Texture = tex;
+            image.Title = title;
+            TextureDetails[i] = image;
         }
     }
 
@@ -182,4 +192,10 @@ public class ARDirectoryManager : MonoBehaviour
 
         return result;
     }
+}
+
+public class DetailedImage
+{
+    public Texture Texture;
+    public string Title;
 }

@@ -2,16 +2,15 @@
 using System.Collections;
 using System;
 
-//public class GestureDetectedEventArgs : EventArgs
-//{
-//    public TouchType TouchType { get; set; }
-//}
+public class GestureDetectedEventArgs : EventArgs
+{
+    public TouchType TouchType { get; set; }
+}
 
 public class InputControls : MonoBehaviour
 {
     public delegate void GestureDetectedEventHandler(object source, GestureDetectedEventArgs e);
     public static event GestureDetectedEventHandler GestureDetected;
-
 
     [Header("Button mapping")]
     public KeyCode FirstTouch = KeyCode.Mouse0;

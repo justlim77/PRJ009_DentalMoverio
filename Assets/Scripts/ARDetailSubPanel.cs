@@ -4,6 +4,8 @@ using System.Collections;
 
 public class ARDetailSubPanel : MonoBehaviour
 {
+    public Text text;
+
     RectTransform _RectTransform;
     public RectTransform RectTransform
     {
@@ -46,5 +48,10 @@ public class ARDetailSubPanel : MonoBehaviour
     public void SetImage(Texture2D tex)
     {
         _RawImage.texture = tex;
+    }
+
+    public void SetTitle(string title)
+    {
+        text.text = title;
     }
 }
