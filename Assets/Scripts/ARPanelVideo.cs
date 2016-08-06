@@ -16,29 +16,23 @@ public class ARPanelVideo : MonoBehaviour
     // Use this for initialization
     void Start()
     {
-        if(Application.platform == RuntimePlatform.WindowsEditor)
-            path = string.Format("{0}/{1}", Application.streamingAssetsPath, subPath);
-        else if (Application.platform == RuntimePlatform.Android)
-        {
-            Debugger.Instance.Log(ARDirectoryManager.VideoPath);
-            path = ARDirectoryManager.VideoPath;
-        }
+        path = ARDirectoryManager.VideoPath;
 
         var dir = new DirectoryInfo(path);
-        Debugger.Instance.Log(dir.FullName);
+        //Debugger.Instance.Log(dir.FullName);
         var dirFiles = Directory.GetFiles(path);
         var dirFileInfos = dir.GetFiles();
-        for(int i = 0; i < dirFiles.Length; i++)
+        Debugger.Instance.Log("ARPanelVideo | Files found: " + dirFiles.Length);
+        for (int i = 0; i < dirFiles.Length; i++)
         {
             if(dirFiles[i].Contains(".meta"))
                 continue;
-            Debugger.Instance.Log(dirFiles[i]);
+            Debugger.Instance.Log("ARPanelVideo: " + dirFiles[i]);
             videoPath = dirFiles[i];
             videoInfo = dirFileInfos[i];
         }
 
         UpdateVideoInfo(videoInfo);
-
     }
 
     string GetVideoPath()

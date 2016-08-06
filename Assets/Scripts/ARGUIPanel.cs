@@ -18,26 +18,50 @@ public class ARGUIPanel : MonoBehaviour
     public PanelType panelType = PanelType.Home;
 
     Vector2 _initialPos;
-    CanvasGroup _canvasGroup;
-    RectTransform _rectTrans;
-    HorizontalOrVerticalLayoutGroup _layoutGroup;
+
+    CanvasGroup _CanvasGroup;
+    public CanvasGroup canvasGroup
+    {
+        get
+        {
+            if (_CanvasGroup == null)
+            {
+                _CanvasGroup = GetComponent<CanvasGroup>();
+                if (_CanvasGroup == null)
+                {
+                    _CanvasGroup = gameObject.AddComponent<CanvasGroup>();
+                }
+            }
+
+            return _CanvasGroup;
+        }
+    }
+
+    RectTransform _RectTransform;
+    public RectTransform rectTransform
+    {
+        get
+        {
+            if (_RectTransform == null)
+                _RectTransform = GetComponent<RectTransform>();
+            return _RectTransform;
+        }
+    }
+
+    HorizontalOrVerticalLayoutGroup _LayoutGroup;
+    public HorizontalOrVerticalLayoutGroup layoutGroup
+    {
+        get
+        {
+            if(_LayoutGroup == null)
+                _LayoutGroup = GetComponent<HorizontalOrVerticalLayoutGroup>();
+            return _LayoutGroup;
+        }
+    }
 
     void Awake()
     {
-        _canvasGroup = this.GetComponent<CanvasGroup>();
-        if (_canvasGroup == null)
-            _canvasGroup = this.gameObject.AddComponent<CanvasGroup>();
-
-        _rectTrans = this.GetComponent<RectTransform>();
-        _initialPos = _rectTrans.anchoredPosition;
-
-        _layoutGroup = this.GetComponent<HorizontalOrVerticalLayoutGroup>();
-    }
-
-    void Start()
-    {
-        //if(this.GetComponent<RectTransform>() != null)
-        //    this.GetComponent<RectTransform>().anchoredPosition = Vector2.zero;
+        _initialPos = rectTransform.anchoredPosition;
     }
 
     public void OpenPanel()
@@ -48,8 +72,8 @@ public class ARGUIPanel : MonoBehaviour
 
     public void SetActive(bool value)
     {
-        _canvasGroup.alpha = value ? 1 : 0;
-        _canvasGroup.blocksRaycasts = value;
+        canvasGroup.alpha = value ? 1 : 0;
+        canvasGroup.blocksRaycasts = value;
 
         //Refresh();
     }
@@ -67,11 +91,10 @@ public class ARGUIPanel : MonoBehaviour
     public void Refresh()
     {
         //Perform quick re-layout
-        if (_layoutGroup != null)
+        if (layoutGroup != null)
         {
-            _layoutGroup.enabled = false;
-            _layoutGroup.enabled = true;
+            layoutGroup.enabled = false;
+            layoutGroup.enabled = true;
         }
     }
-
 }

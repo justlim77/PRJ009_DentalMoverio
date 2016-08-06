@@ -17,7 +17,7 @@ public class ARGUIManager : MonoBehaviour
 
     [SerializeField] ARGUIPanel[] ARGUIPanels;
     [Header("Content Panels")]
-    [SerializeField] ARGUIPanel DetailsPanel;
+    [SerializeField] ARGUIPanel DetailPanel;
     //[SerializeField] ARGUIPanel RadiographPanel;
     [SerializeField] ARGUIPanel VideoPanel;
     [SerializeField] ARGUIPanel CameraPanel;
@@ -39,12 +39,13 @@ public class ARGUIManager : MonoBehaviour
     [SerializeField] Image cameraPlane;
     [SerializeField] Resolution resolution;
     [SerializeField] Button btnSnapshot;
-    [SerializeField] string phoneImagePath;
+    string _PhoneImagePath;
 
     WebCamDevice device;
     WebCamTexture camTex;
     CanvasGroup _topBarCanvasGroup, _botBarCanvasGroup;
     RectTransform _midPanelRectTrans, _homePanelRectTrans;
+    ARDetailPanel _DetailPanel;
     int _currentPanelIdx;
 
     protected virtual void OnPanelChanged(PanelType type)
@@ -69,7 +70,7 @@ public class ARGUIManager : MonoBehaviour
 
         btnLoad.onClick.AddListener(() => StartApp());
 
-        btnFacial.onClick.AddListener(() => DetailsPanel.OpenPanel());
+        btnFacial.onClick.AddListener(() => DetailPanel.OpenPanel());
         btnFacial.onClick.AddListener(() => StopFeed());
 
         //btnRadiograph.onClick.AddListener(() => RadiographPanel.OpenPanel());
@@ -125,6 +126,9 @@ public class ARGUIManager : MonoBehaviour
         //Setup scrollable mid panel
         _midPanelRectTrans = MidPanel.GetComponent<RectTransform>();
         MidPanel.GetComponent<ScrollRect>().enabled = false;
+
+        // Setup detail panel
+        _DetailPanel = DetailPanel.GetComponent<ARDetailPanel>();
     }
 
     private void OnGestureDetected(object source, GestureDetectedEventArgs e)
@@ -139,12 +143,18 @@ public class ARGUIManager : MonoBehaviour
             case TouchType.Right:
                 PreviousPanel();
                 break;
-            case TouchType.DoubleTap:
-                MoverioCameraController controller = MoverioCameraController.Instance;
-                bool muted = controller.GetCurrentMuteState();
-                CanvasMuteType = !CanvasMuteType;
-                controller.SetCurrentMuteType(!muted);
+            case TouchType.Up:
+                _DetailPanel.ScrollUp();
                 break;
+            case TouchType.Down:
+                _DetailPanel.ScrollDown();
+                break;
+            //case TouchType.DoubleTap:
+            //    MoverioCameraController controller = MoverioCameraController.Instance;
+            //    bool muted = controller.GetCurrentMuteState();
+            //    CanvasMuteType = !CanvasMuteType;
+            //    controller.SetCurrentMuteType(!muted);
+            //    break;
         }
     }
 
@@ -174,7 +184,7 @@ public class ARGUIManager : MonoBehaviour
         //RadiographPanel.GetComponent<HorizontalOrVerticalLayoutGroup>().enabled = true;
 
         //HomePanel.SetActive(false);
-        _homeTargetPos = HomePanel.GetInitialPosition();
+        _HomeTargetPos = HomePanel.GetInitialPosition();
 
         MidPanel.GetComponent<ScrollRect>().enabled = true;
 
@@ -225,17 +235,17 @@ public class ARGUIManager : MonoBehaviour
             switch (panel.panelType)
             {
                 case PanelType.Camera:
-                    _targetPos = panel.GetInversedInitialPos();
+                    _PanelTargetPos = panel.GetInversedInitialPos();
                     LaunchFeed();
                     break;
                 case PanelType.Details:
                 case PanelType.Video:
                     StopFeed();
-                    _targetPos = panel.GetInversedInitialPos();
+                    _PanelTargetPos = panel.GetInversedInitialPos();
                     break;
                 case PanelType.Home:
                     StopFeed();
-                    _homeTargetPos = Vector2.zero;
+                    _HomeTargetPos = Vector2.zero;
                     break;
             }
 
@@ -249,25 +259,32 @@ public class ARGUIManager : MonoBehaviour
         return null;
     }
 
-    Vector2 _targetPos, _homeTargetPos;
+    Vector2 _PanelTargetPos, _HomeTargetPos;
     void Update()
     {
         //Slide content panels
         if (!InputControls.Holding)
-        {
-            Vector2 currentPos = _midPanelRectTrans.anchoredPosition;
-            if (currentPos != _targetPos)
+        {            
+            Vector2 panelCurrentPos = _midPanelRectTrans.anchoredPosition;
+            if (panelCurrentPos != _PanelTargetPos)
             {
-                Vector2 lerpToPos = Vector2.Lerp(currentPos, _targetPos, panelSlideSpeed * Time.deltaTime);
-                _midPanelRectTrans.anchoredPosition = lerpToPos;
+                Vector2 lerpToPos = Vector2.Lerp(panelCurrentPos, _PanelTargetPos, panelSlideSpeed * Time.deltaTime);
+                _midPanelRectTrans.anchoredPosition = new Vector2(lerpToPos.x, _midPanelRectTrans.anchoredPosition.y);
+            }
+
+            Vector2 detailCurrentPos = _DetailPanel.scrollRect.content.anchoredPosition;
+            if (detailCurrentPos != _DetailPanel.targetPosition)
+            {
+                Vector2 lerpToPos = Vector2.Lerp(detailCurrentPos, _DetailPanel.targetPosition, panelSlideSpeed * Time.deltaTime);
+                _DetailPanel.scrollRect.content.anchoredPosition = new Vector2(_DetailPanel.scrollRect.content.anchoredPosition.x, lerpToPos.y);
             }
         }
 
         //Slide home panel
         Vector2 homeCurrentPos = _homePanelRectTrans.anchoredPosition;
-        if (homeCurrentPos != _homeTargetPos)
+        if (homeCurrentPos != _HomeTargetPos)
         {
-            Vector2 lerpToPos = Vector2.Lerp(homeCurrentPos, _homeTargetPos, panelSlideSpeed * Time.deltaTime);
+            Vector2 lerpToPos = Vector2.Lerp(homeCurrentPos, _HomeTargetPos, panelSlideSpeed * Time.deltaTime);
             _homePanelRectTrans.anchoredPosition = lerpToPos;
         }
 
@@ -291,6 +308,16 @@ public class ARGUIManager : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.RightArrow))
         {
             NextPanel();
+        }
+
+        if (Input.GetKeyDown(KeyCode.UpArrow))
+        {
+            _DetailPanel.ScrollUp();
+        }
+
+        if (Input.GetKeyDown(KeyCode.DownArrow))
+        {
+            _DetailPanel.ScrollDown();
         }
     }
 
@@ -322,7 +349,7 @@ public class ARGUIManager : MonoBehaviour
         string filePath;
         string subPath;
 #if UNITY_ANDROID && !UNITY_EDITOR
-        subPath = phoneImagePath;
+        subPath = Constants.PhoneSDCardPath;
         filePath = subPath + capture.GetFileName(resolution.width, resolution.height);
 #elif UNITY_EDITOR
         subPath = Application.dataPath + "/Screenshots/";
@@ -332,6 +359,8 @@ public class ARGUIManager : MonoBehaviour
 #endif
         Debug.Log("File path: " + filePath);
         capture.SaveScreenshot(CaptureMethod.ReadPixels_Asynch, filePath);
+
+        Directory.GetFiles(filePath);
     }
 
     void NextPanel()

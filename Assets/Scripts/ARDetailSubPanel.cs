@@ -5,53 +5,49 @@ using System.Collections;
 public class ARDetailSubPanel : MonoBehaviour
 {
     public Text text;
+    public Vector2 initialPosition { get; private set; }
+    public Vector2 initialInversedPosition { get; private set; }
 
-    RectTransform _RectTransform;
-    public RectTransform RectTransform
+    RectTransform _rectTransform;
+    public RectTransform rectTransform
     {
         get
         {
-            if (_RectTransform == null)
-                _RectTransform = GetComponent<RectTransform>();
-            return _RectTransform;
+            if (_rectTransform == null)
+                _rectTransform = GetComponent<RectTransform>();
+            return _rectTransform;
         }
     }
 
-    RawImage _RawImage;
-    public RawImage RawImage
+    RawImage _rawImage;
+    public RawImage rawImage
     {
         get
         {
-            if (_RawImage == null)
-                _RawImage = GetComponent<RawImage>();
-            return _RawImage;
+            if (_rawImage == null)
+                _rawImage = GetComponent<RawImage>();
+            return _rawImage;
         }
     }
-
-    void Awake()
-    {
-        _RectTransform = GetComponent<RectTransform>();
-        _RawImage = GetComponent<RawImage>();
-    }
-
-    // Use this for initialization
-    void Start ()
-    {
-	
-	}
 
     public void SetDimensions(float x, float y, float width, float height)
     {
-        _RectTransform.rect.Set(x, y, width, height);
+        _rectTransform.rect.Set(x, y, width, height);
     }
 
     public void SetImage(Texture2D tex)
     {
-        _RawImage.texture = tex;
+        _rawImage.texture = tex;
     }
 
     public void SetTitle(string title)
     {
         text.text = title;
+    }
+
+    public void SetInitialPosition()
+    {
+        initialPosition = rectTransform.anchoredPosition;
+        initialInversedPosition = new Vector2(initialPosition.x, -initialPosition.y);
     }
 }

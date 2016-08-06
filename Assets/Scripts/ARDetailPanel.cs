@@ -1,68 +1,101 @@
 ﻿using UnityEngine;
+using UnityEngine.UI;
 using System.Collections;
 using System;
 
 public class ARDetailPanel : MonoBehaviour
 {
-    public GameObject SubPanelPrefab;
-    public Resolution SubPanelDimensions;
+    public GameObject subPanelPrefab;
+    public Resolution subPanelResolution;
+    public float panelSlideSpeed = 5.0f;
 
-    Texture2D _TextureArray;
-    ARDetailSubPanel[] _SubPanels;
+    Texture2D _textureArray;    // Deprecated
+    ARDetailSubPanel[] _subPanelArray;
+    int _currentPanelIndex = 0;
+    int _textureAmount = 0;
 
-	void Start ()
+    public Vector2 targetPosition { get; set; }
+
+    ScrollRect _scrollRect;
+    public ScrollRect scrollRect
+    {
+        get
+        {
+            if (_scrollRect == null)
+            {
+                _scrollRect = GetComponent<ScrollRect>();
+            }
+            return _scrollRect;
+        }
+    }
+
+    RectTransform _rectTransform;
+    public RectTransform rectTransform
+    {
+        get
+        {
+            if (_rectTransform == null)
+                _rectTransform = GetComponent<RectTransform>();
+            return _rectTransform;
+        }
+    }
+
+    void Start ()
     {
         StartCoroutine(Load());
 	}
 
     public void LoadImages(Texture2D[] textureArray)
     {
-        transform.Clear();
+        scrollRect.content.transform.Clear();
 
         int textureAmount = textureArray.Length;
 
-        _SubPanels = new ARDetailSubPanel[textureAmount];
+        _subPanelArray = new ARDetailSubPanel[textureAmount];
+
+        scrollRect.content.rect.Set(0, 0, scrollRect.content.rect.width, subPanelResolution.height * textureAmount);
 
         for(int i = 0; i < textureAmount; i++)
         {
-            GameObject panel = Instantiate(SubPanelPrefab);
+            GameObject panel = Instantiate(subPanelPrefab);
+
             ARDetailSubPanel subPanel = panel.GetComponent<ARDetailSubPanel>();
-            _SubPanels[i] = subPanel;
+            subPanel.rectTransform.SetParent(scrollRect.content.transform);
+            subPanel.rawImage.texture = textureArray[i];
+            subPanel.rectTransform.anchoredPosition = new Vector2(0, subPanelResolution.height * -i);
+            subPanel.SetInitialPosition();
 
-            subPanel.RectTransform.SetParent(this.transform);
-            subPanel.RectTransform.localScale = Vector3.one;
-            subPanel.RectTransform.pivot = new Vector2(0.5f, 0.5f);
-
-            //subPanel.SetDimensions(0, SubPanelDimensions.height * i, SubPanelDimensions.width, SubPanelDimensions.height);
-            subPanel.RawImage.texture = textureArray[i];
-            subPanel.RectTransform.anchoredPosition = new Vector2(0, SubPanelDimensions.height * -i);
+            _subPanelArray[i] = subPanel;
         }
     }
 
     public void LoadImages(DetailedImage[] textureDetails)
     {
-        transform.Clear();
+        scrollRect.content.transform.Clear();
 
-        int textureAmount = textureDetails.Length;
+        _textureAmount = textureDetails.Length;
 
-        _SubPanels = new ARDetailSubPanel[textureAmount];
+        _subPanelArray = new ARDetailSubPanel[_textureAmount];
 
-        for (int i = 0; i < textureAmount; i++)
+        scrollRect.content.SetSizeWithCurrentAnchors(RectTransform.Axis.Vertical, Mathf.Abs(486 * _textureAmount));
+
+        for (int i = 0; i < _textureAmount; i++)
         {
-            GameObject panel = Instantiate(SubPanelPrefab);
-            ARDetailSubPanel subPanel = panel.GetComponent<ARDetailSubPanel>();
-            _SubPanels[i] = subPanel;
-
-            subPanel.RectTransform.SetParent(this.transform);
-            subPanel.RectTransform.localScale = Vector3.one;
-            subPanel.RectTransform.pivot = new Vector2(0.5f, 0.5f);
-
-            //subPanel.SetDimensions(0, SubPanelDimensions.height * i, SubPanelDimensions.width, SubPanelDimensions.height);
             DetailedImage image = textureDetails[i];
-            subPanel.RawImage.texture = image.Texture;
+
+            GameObject panel = Instantiate(subPanelPrefab);
+            ARDetailSubPanel subPanel = panel.GetComponent<ARDetailSubPanel>();
+            subPanel.rectTransform.SetParent(scrollRect.content.transform);
+            subPanel.rawImage.texture = image.Texture;
             subPanel.SetTitle(image.Title);
-            subPanel.RectTransform.anchoredPosition = new Vector2(0, SubPanelDimensions.height * -i);
+            subPanel.rectTransform.anchoredPosition = new Vector2(0, subPanelResolution.height * -i);
+            subPanel.SetInitialPosition();
+
+            _subPanelArray[i] = subPanel;
         }
+
+        _currentPanelIndex = 0;
+        targetPosition = _subPanelArray[0].initialPosition;
     }
 
     IEnumerator Load()
@@ -70,5 +103,21 @@ public class ARDetailPanel : MonoBehaviour
         yield return StartCoroutine(ARDirectoryManager.LoadLocalImages());
 
         LoadImages(ARDirectoryManager.TextureDetails);
+    }
+
+    public void ScrollUp()
+    {
+        _currentPanelIndex += 1;
+        _currentPanelIndex = Mathf.Clamp(_currentPanelIndex, 0, _textureAmount - 1);
+        targetPosition = _subPanelArray[_currentPanelIndex].initialInversedPosition;
+        Debug.Log(targetPosition);
+    }
+
+    public void ScrollDown()
+    {
+        _currentPanelIndex -= 1;
+        _currentPanelIndex = Mathf.Clamp(_currentPanelIndex, 0, _textureAmount);
+        targetPosition = _subPanelArray[_currentPanelIndex].initialInversedPosition;
+        Debug.Log(targetPosition);
     }
 }

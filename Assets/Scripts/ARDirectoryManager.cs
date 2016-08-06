@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections;
 using System.IO;
+using ICSharpCode;
 
 public class ARDirectoryManager : MonoBehaviour
 {
@@ -19,13 +20,17 @@ public class ARDirectoryManager : MonoBehaviour
     {
         get
         {
+#if UNITY_EDITOR
             string path = Path.Combine(Application.streamingAssetsPath, "images");
+#elif UNITY_ANDROID
+            string path = Path.Combine(Application.persistentDataPath, "images");          
+#endif
             if (!Directory.Exists(path))
             {
                 Directory.CreateDirectory(path);
                 Debug.Log("Path not found! Creating folder at " + path);
             }
-            Debug.Log("Image Folder path located at " + path);
+            //Debugger.Instance.Log("Image Folder path located at " + path);
 
             return path;
         }
@@ -104,12 +109,19 @@ public class ARDirectoryManager : MonoBehaviour
     {
         get
         {
-            string path = Path.Combine(Application.persistentDataPath, "videos");
+#if UNITY_EDITOR
+            string path = Path.Combine(Application.streamingAssetsPath, "videos");
+#elif UNITY_ANDROID
+            //string path = Application.persistentDataPath +  "/videos";          
+            string path = Path.Combine(Application.persistentDataPath, "videos");          
+#endif
             if (!Directory.Exists(path))
             {
                 Directory.CreateDirectory(path);
                 Debugger.Instance.Log("Video path not found! Creating folder: " + path);
             }
+
+            //Debugger.Instance.Log("Video Folder Path located at : " + path);
 
             _VideoPath = path;
             return _VideoPath;
@@ -143,9 +155,19 @@ public class ARDirectoryManager : MonoBehaviour
     public static IEnumerator LoadLocalImages()
     {
         string path = ImageFolderPath;
+#if UNITY_EDITOR
         _PathPrefix = @"file://";
-
-        FilePaths = Directory.GetFiles(path, "*.jpg");
+#elif UNITY_ANDROID
+        _PathPrefix = "";
+#endif
+        Debugger.Instance.Log(string.Format("LoadLocalImages image path: {0}", path));
+#if UNITY_EDITOR
+        var filePaths = Directory.GetFiles(path, "*.jpg");
+#elif UNITY_ANDROID
+        var filePaths = Directory.GetFiles(path);
+#endif
+        FilePaths = filePaths;
+        Debugger.Instance.Log(string.Format("LoadLocalImages from {0}: {1}", path, FilePaths[0]));
 
         string[] titles = new string[FilePaths.Length];
 
@@ -156,6 +178,7 @@ public class ARDirectoryManager : MonoBehaviour
         for(int i = 0; i < fileAmount; i++)
         {
             string tempPath = _PathPrefix + FilePaths[i];
+            Debugger.Instance.Log(tempPath);
             Debug.Log(tempPath);
             WWW www = new WWW(tempPath);
             yield return www;
@@ -191,6 +214,35 @@ public class ARDirectoryManager : MonoBehaviour
             result = false;
 
         return result;
+    }
+
+    public string GetStreamingAssetsPath(string folderName)
+    {
+        // Put your file to "YOUR_UNITY_PROJ/Assets/StreamingAssets"
+        // example: "YOUR_UNITY_PROJ/Assets/StreamingAssets/db.bytes"
+        string dbPath = "";
+
+        if (Application.platform == RuntimePlatform.Android)
+        {
+            // Android
+            string oriPath = System.IO.Path.Combine(Application.streamingAssetsPath, folderName);
+            string realPath = "";
+            // Android only use WWW to read file
+            WWW reader = new WWW(oriPath);
+            while (!reader.isDone) { }
+
+            realPath = Application.persistentDataPath + "/" + folderName;
+            System.IO.File.WriteAllBytes(realPath, reader.bytes);
+
+            dbPath = realPath;
+        }
+        else
+        {
+            // iOS
+            dbPath = System.IO.Path.Combine(Application.streamingAssetsPath, "db.bytes");
+        }
+
+        return dbPath;
     }
 }
 
