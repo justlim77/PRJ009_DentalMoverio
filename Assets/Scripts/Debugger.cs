@@ -41,6 +41,9 @@ public class Debugger : MonoBehaviour
 
     public void Log(object obj)
     {
+        if (!enableDebug)
+            return;
+
         string log = obj.ToString();
         logList.Add(log);
         _sb.AppendLine(log);
@@ -49,7 +52,6 @@ public class Debugger : MonoBehaviour
         {
             logList.RemoveRange(0, 20);
         }
-
 
         debugLabel.text = "";
 

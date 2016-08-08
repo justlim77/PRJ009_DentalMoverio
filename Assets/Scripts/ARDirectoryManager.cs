@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections;
 using System.IO;
+using System.Linq;
 //using ICSharpCode;
 
 public class ARDirectoryManager : MonoBehaviour
@@ -155,19 +156,20 @@ public class ARDirectoryManager : MonoBehaviour
     public static IEnumerator LoadLocalImages()
     {
         string path = ImageFolderPath;
-#if UNITY_EDITOR
+
         _PathPrefix = @"file://";
-#elif UNITY_ANDROID
-        _PathPrefix = "";
-#endif
+
         Debugger.Instance.Log(string.Format("LoadLocalImages image path: {0}", path));
 #if UNITY_EDITOR
-        var filePaths = Directory.GetFiles(path, "*.jpg");
+        string[] filePaths = Directory.GetFiles(path, "*.jpg").OrderBy(f => f).ToArray<string>();
 #elif UNITY_ANDROID
-        var filePaths = Directory.GetFiles(path);
+        string[] filePaths = Directory.GetFiles(path);
 #endif
+        foreach (var filePath in filePaths)
+        {
+            Debugger.Instance.Log(string.Format("LoadLocalImages from {0}", filePath));
+        }
         FilePaths = filePaths;
-        Debugger.Instance.Log(string.Format("LoadLocalImages from {0}: {1}", path, FilePaths[0]));
 
         string[] titles = new string[FilePaths.Length];
 
@@ -180,15 +182,15 @@ public class ARDirectoryManager : MonoBehaviour
             string tempPath = _PathPrefix + FilePaths[i];
             Debugger.Instance.Log(tempPath);
             Debug.Log(tempPath);
+            Texture2D tex = new Texture2D(4, 4, TextureFormat.DXT1, false);
             WWW www = new WWW(tempPath);
             yield return www;
-            Texture2D tex = new Texture2D(4, 4, TextureFormat.DXT1, false);
             www.LoadImageIntoTexture(tex);
 
             DetailedImage image = new DetailedImage();
 
             string title = Path.GetFileNameWithoutExtension(tempPath);
-            image.Texture = tex;
+            image.Texture2D = tex;
             image.Title = title;
             TextureDetails[i] = image;
         }
@@ -248,6 +250,6 @@ public class ARDirectoryManager : MonoBehaviour
 
 public class DetailedImage
 {
-    public Texture Texture;
+    public Texture2D Texture2D;
     public string Title;
 }

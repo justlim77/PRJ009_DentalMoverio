@@ -13,6 +13,8 @@ public class ARGUIManager : MonoBehaviour
 {
     public delegate void PanelChangedEventHandler(object sender, PanelChangedEventArgs e);
     public static event PanelChangedEventHandler PanelChanged;
+
+
     public static ARGUIManager Instance { get; private set; }
 
     [SerializeField] ARGUIPanel[] ARGUIPanels;
@@ -68,13 +70,11 @@ public class ARGUIManager : MonoBehaviour
         btnMenu.onClick.AddListener(() => HomePanel.OpenPanel());
         btnMenu.onClick.AddListener(() => OnBarsToggled(this, false));
 
+        btnLoad.onClick.AddListener(() => DetailPanel.OpenPanel());
         btnLoad.onClick.AddListener(() => StartApp());
 
         btnFacial.onClick.AddListener(() => DetailPanel.OpenPanel());
         btnFacial.onClick.AddListener(() => StopFeed());
-
-        //btnRadiograph.onClick.AddListener(() => RadiographPanel.OpenPanel());
-        //btnRadiograph.onClick.AddListener(() => StopFeed());
 
         btnVideo.onClick.AddListener(() => VideoPanel.OpenPanel());
         btnVideo.onClick.AddListener(() => StopFeed());
@@ -84,7 +84,6 @@ public class ARGUIManager : MonoBehaviour
 
         btnSnapshot.onClick.AddListener(() => SnapShot());
 
-        //TouchControls.GestureDetected += OnGestureDetected;
         InputControls.GestureDetected += OnGestureDetected;     //Moverio 4.5 ~ 4.6 with Input.GetMouse events
 
         if (TopBar != null)
@@ -144,10 +143,10 @@ public class ARGUIManager : MonoBehaviour
                 PreviousPanel();
                 break;
             case TouchType.Up:
-                _DetailPanel.ScrollUp();
+                _DetailPanel.Scroll(ScrollType.Up);
                 break;
             case TouchType.Down:
-                _DetailPanel.ScrollDown();
+                _DetailPanel.Scroll(ScrollType.Down);
                 break;
             //case TouchType.DoubleTap:
             //    MoverioCameraController controller = MoverioCameraController.Instance;
@@ -207,9 +206,9 @@ public class ARGUIManager : MonoBehaviour
 
     void OnDisable()
     {
+        btnLoad.onClick.RemoveAllListeners();
         btnMenu.onClick.RemoveAllListeners();
         btnFacial.onClick.RemoveAllListeners();
-        //btnRadiograph.onClick.RemoveAllListeners();
         btnVideo.onClick.RemoveAllListeners();
         btnCamera.onClick.RemoveAllListeners();
 
@@ -250,7 +249,7 @@ public class ARGUIManager : MonoBehaviour
             }
 
             _currentPanelIdx = Array.IndexOf(ARGUIPanels, panel);
-            Debug.Log("Current panel index: " + _currentPanelIdx);
+            //Debug.Log("Current panel index: " + _currentPanelIdx);
 
             string msg = panel.panelType.ToString();
             Core.BroadcastEvent("OnUpdateHeader", this, msg);
@@ -312,12 +311,12 @@ public class ARGUIManager : MonoBehaviour
 
         if (Input.GetKeyDown(KeyCode.UpArrow))
         {
-            _DetailPanel.ScrollUp();
+            _DetailPanel.Scroll(ScrollType.Down);
         }
 
         if (Input.GetKeyDown(KeyCode.DownArrow))
         {
-            _DetailPanel.ScrollDown();
+            _DetailPanel.Scroll(ScrollType.Up);
         }
     }
 

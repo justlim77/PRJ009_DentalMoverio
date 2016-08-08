@@ -3,11 +3,33 @@ using UnityEngine.UI;
 using System.Collections;
 using System;
 
+public enum ScrollType
+{
+    Up,
+    Down,
+    Left,
+    Right
+}
+
+public class DetailPanelChangedEventArgs : EventArgs
+{
+    public int DetailPanelIndex { get; set; }
+    public int DetailPanelTotal { get; set; }
+}
+
 public class ARDetailPanel : MonoBehaviour
 {
+    public delegate void DetailPanelChangedEventHandler(object sender, DetailPanelChangedEventArgs e);
+    public static event DetailPanelChangedEventHandler DetailPanelChanged;
+
     public GameObject subPanelPrefab;
     public Resolution subPanelResolution;
     public float panelSlideSpeed = 5.0f;
+
+    public Button previousButton;
+    public Button nextButton;
+
+    public Text slideLabel;
 
     Texture2D _textureArray;    // Deprecated
     ARDetailSubPanel[] _subPanelArray;
@@ -40,6 +62,12 @@ public class ARDetailPanel : MonoBehaviour
         }
     }
 
+    protected virtual void OnDetailPanelChanged()
+    {
+        if (DetailPanelChanged != null)
+            DetailPanelChanged(this, new DetailPanelChangedEventArgs() { DetailPanelIndex = _currentPanelIndex, DetailPanelTotal = _textureAmount });
+    }
+
     void Start ()
     {
         StartCoroutine(Load());
@@ -61,7 +89,7 @@ public class ARDetailPanel : MonoBehaviour
 
             ARDetailSubPanel subPanel = panel.GetComponent<ARDetailSubPanel>();
             subPanel.rectTransform.SetParent(scrollRect.content.transform);
-            subPanel.rawImage.texture = textureArray[i];
+            //subPanel.rawImage.texture = textureArray[i];
             subPanel.rectTransform.anchoredPosition = new Vector2(0, subPanelResolution.height * -i);
             subPanel.SetInitialPosition();
 
@@ -86,7 +114,9 @@ public class ARDetailPanel : MonoBehaviour
             GameObject panel = Instantiate(subPanelPrefab);
             ARDetailSubPanel subPanel = panel.GetComponent<ARDetailSubPanel>();
             subPanel.rectTransform.SetParent(scrollRect.content.transform);
-            subPanel.rawImage.texture = image.Texture;
+
+            Sprite sprite = Sprite.Create(image.Texture2D, new Rect(0, 0, image.Texture2D.width, image.Texture2D.height), Vector2.zero);
+            subPanel.SetSprite(sprite);
             subPanel.SetTitle(image.Title);
             subPanel.rectTransform.anchoredPosition = new Vector2(0, subPanelResolution.height * -i);
             subPanel.SetInitialPosition();
@@ -95,6 +125,7 @@ public class ARDetailPanel : MonoBehaviour
         }
 
         _currentPanelIndex = 0;
+        _cachedPanelIndex = _currentPanelIndex;
         targetPosition = _subPanelArray[0].initialPosition;
     }
 
@@ -103,21 +134,60 @@ public class ARDetailPanel : MonoBehaviour
         yield return StartCoroutine(ARDirectoryManager.LoadLocalImages());
 
         LoadImages(ARDirectoryManager.TextureDetails);
+
+        previousButton.onClick.AddListener(delegate { Scroll(ScrollType.Down); });
+        nextButton.onClick.AddListener(delegate { Scroll(ScrollType.Up); });
+
+        UpdateIndexLabel();
+        UpdateButtonVisuals();
     }
 
-    public void ScrollUp()
+    int _cachedPanelIndex = 0;
+    public void Scroll(ScrollType scrollType)
     {
-        _currentPanelIndex += 1;
+        switch (scrollType)
+        {
+            case ScrollType.Up:
+                _currentPanelIndex += 1;
+                break;
+            case ScrollType.Down:
+                _currentPanelIndex -= 1;
+                break;
+        }
+
         _currentPanelIndex = Mathf.Clamp(_currentPanelIndex, 0, _textureAmount - 1);
-        targetPosition = _subPanelArray[_currentPanelIndex].initialInversedPosition;
-        Debug.Log(targetPosition);
+
+        if (_currentPanelIndex != _cachedPanelIndex)
+        {
+            targetPosition = _subPanelArray[_currentPanelIndex].initialInversedPosition;
+            OnDetailPanelChanged();
+            _cachedPanelIndex = _currentPanelIndex;
+
+            UpdateIndexLabel();
+            UpdateButtonVisuals();
+        }
     }
 
-    public void ScrollDown()
+    public void UpdateIndexLabel()
     {
-        _currentPanelIndex -= 1;
-        _currentPanelIndex = Mathf.Clamp(_currentPanelIndex, 0, _textureAmount);
-        targetPosition = _subPanelArray[_currentPanelIndex].initialInversedPosition;
-        Debug.Log(targetPosition);
+        slideLabel.text = string.Format("{0} of {1}", _currentPanelIndex + 1, _textureAmount);
+    }
+
+    public void UpdateButtonVisuals()
+    {
+        if (_currentPanelIndex <= 0)
+        {
+            previousButton.image.CrossFadeAlpha(0, 0.25f, true);
+        }
+
+        else if (_currentPanelIndex >= _textureAmount - 1)
+        {
+            nextButton.image.CrossFadeAlpha(0, 0.25f, true);
+        }
+        else
+        {
+            previousButton.image.CrossFadeAlpha(1, 0.5f, true);
+            nextButton.image.CrossFadeAlpha(1, 0.5f, true);
+        }
     }
 }

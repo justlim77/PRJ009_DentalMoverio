@@ -19,25 +19,25 @@ public class ARDetailSubPanel : MonoBehaviour
         }
     }
 
-    RawImage _rawImage;
-    public RawImage rawImage
+    Image _rawImage;
+    public Image rawImage
     {
         get
         {
             if (_rawImage == null)
-                _rawImage = GetComponent<RawImage>();
+                _rawImage = GetComponent<Image>();
             return _rawImage;
         }
     }
 
     public void SetDimensions(float x, float y, float width, float height)
     {
-        _rectTransform.rect.Set(x, y, width, height);
+        rectTransform.rect.Set(x, y, width, height);
     }
 
-    public void SetImage(Texture2D tex)
+    public void SetSprite(Sprite sprite)
     {
-        _rawImage.texture = tex;
+        rawImage.sprite = sprite;
     }
 
     public void SetTitle(string title)
