@@ -18,7 +18,6 @@ public class Debugger : MonoBehaviour
     public bool enableDebug = true;
     public GameObject debugPanel;
     public Text debugLabel;
-    public Scrollbar scrollbar;
 
     List<string> logList = new List<string>();
     StringBuilder _sb = new StringBuilder();
@@ -59,9 +58,6 @@ public class Debugger : MonoBehaviour
         {
             debugLabel.text += string.Format(">{0}\n", logList[i]);
         }
-
-        //debugLabel.text += string.Format(">{0}\n", log);
-        scrollbar.value = 0;
     }
 
     void EnableDebug(bool val)
