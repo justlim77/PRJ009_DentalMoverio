@@ -3,6 +3,9 @@ using UnityEngine.UI;
 using System;
 using System.IO;
 using System.Collections;
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
 
 public class PanelChangedEventArgs : EventArgs
 {
@@ -13,7 +16,6 @@ public class ARGUIManager : MonoBehaviour
 {
     public delegate void PanelChangedEventHandler(object sender, PanelChangedEventArgs e);
     public static event PanelChangedEventHandler PanelChanged;
-
 
     public static ARGUIManager Instance { get; private set; }
 
@@ -31,6 +33,7 @@ public class ARGUIManager : MonoBehaviour
     //[SerializeField] Button btnRadiograph;
     [SerializeField] Button btnVideo;
     [SerializeField] Button btnCamera;
+    [SerializeField] Button btnGallery;
     [SerializeField] Button btnMenu;
     [Header("General")]
     [SerializeField] Button btnLoad;
@@ -41,13 +44,12 @@ public class ARGUIManager : MonoBehaviour
     [SerializeField] Image cameraPlane;
     [SerializeField] Resolution resolution;
     [SerializeField] Button btnSnapshot;
-    string _PhoneImagePath;
 
-    WebCamDevice device;
-    WebCamTexture camTex;
+    WebCamDevice _device;
+    WebCamTexture _camTex;
     CanvasGroup _topBarCanvasGroup, _botBarCanvasGroup;
     RectTransform _midPanelRectTrans, _homePanelRectTrans;
-    ARDetailPanel _DetailPanel;
+    ARDetailPanel _detailPanel;
     int _currentPanelIdx;
 
     protected virtual void OnPanelChanged(PanelType type)
@@ -58,11 +60,21 @@ public class ARGUIManager : MonoBehaviour
 
     void Awake()
     {
-        if(Instance == null)
-            Instance = this;
+        if (Instance != null && Instance != this)
+            Destroy(this.gameObject);
 
         Core.SubscribeEvent("OnPanelOpened", OnPanelOpened);
         Core.SubscribeEvent("OnToggleBars", OnBarsToggled);
+    }
+
+    void OnEnable()
+    {
+        NativeToolkit.OnImageSaved += NativeToolkit_OnImageSaved;
+    }
+
+    private void NativeToolkit_OnImageSaved(string obj)
+    {
+        NativeToolkit.ScheduleLocalNotification("DentalAR", "Image saved to " + obj, smallIcon:"", largeIcon:"dental_notification_large");
     }
 
     void Start ()
@@ -83,6 +95,7 @@ public class ARGUIManager : MonoBehaviour
         btnCamera.onClick.AddListener(() => LaunchFeed());
 
         btnSnapshot.onClick.AddListener(() => SnapShot());
+        btnGallery.onClick.AddListener(() => NativeToolkit.PickImage());
 
         InputControls.GestureDetected += OnGestureDetected;     //Moverio 4.5 ~ 4.6 with Input.GetMouse events
 
@@ -100,17 +113,17 @@ public class ARGUIManager : MonoBehaviour
 
         try
         {
-            device = WebCamTexture.devices[0];
+            _device = WebCamTexture.devices[0];
         }
         catch (IndexOutOfRangeException e)
         {
             Debug.Log(e.Message);
         }
 
-        if(device.name != null)
-            camTex = new WebCamTexture(device.name, resolution.width, resolution.height);
+        if(_device.name != null)
+            _camTex = new WebCamTexture(_device.name, resolution.width, resolution.height);
 
-        cameraPlane.material.mainTexture = camTex;
+        cameraPlane.material.mainTexture = _camTex;
 
         HomePanel.transform.SetAsLastSibling();
         MutePanel.transform.SetAsLastSibling();
@@ -127,7 +140,7 @@ public class ARGUIManager : MonoBehaviour
         MidPanel.GetComponent<ScrollRect>().enabled = false;
 
         // Setup detail panel
-        _DetailPanel = DetailPanel.GetComponent<ARDetailPanel>();
+        _detailPanel = DetailPanel.GetComponent<ARDetailPanel>();
     }
 
     private void OnGestureDetected(object source, GestureDetectedEventArgs e)
@@ -143,10 +156,10 @@ public class ARGUIManager : MonoBehaviour
                 PreviousPanel();
                 break;
             case TouchType.Up:
-                _DetailPanel.Scroll(ScrollType.Up);
+                _detailPanel.Scroll(ScrollType.Up);
                 break;
             case TouchType.Down:
-                _DetailPanel.Scroll(ScrollType.Down);
+                _detailPanel.Scroll(ScrollType.Down);
                 break;
             //case TouchType.DoubleTap:
             //    MoverioCameraController controller = MoverioCameraController.Instance;
@@ -192,16 +205,16 @@ public class ARGUIManager : MonoBehaviour
 
     void LaunchFeed()
     {
-        if (camTex != null)
-            if (!camTex.isPlaying)
-                camTex.Play();
+        if (_camTex != null)
+            if (!_camTex.isPlaying)
+                _camTex.Play();
     }
 
     void StopFeed()
     {
-        if(camTex != null)
-            if(camTex.isPlaying)
-                camTex.Stop();
+        if(_camTex != null)
+            if(_camTex.isPlaying)
+                _camTex.Stop();
     }
 
     void OnDisable()
@@ -211,8 +224,11 @@ public class ARGUIManager : MonoBehaviour
         btnFacial.onClick.RemoveAllListeners();
         btnVideo.onClick.RemoveAllListeners();
         btnCamera.onClick.RemoveAllListeners();
+        btnGallery.onClick.RemoveAllListeners();
+        btnSnapshot.onClick.RemoveAllListeners();
 
         TouchControls.GestureDetected -= OnGestureDetected;
+        NativeToolkit.OnImageSaved -= NativeToolkit_OnImageSaved;
 
         Core.UnsubscribeEvent("OnOpenPanel", OnPanelOpened);
     }
@@ -271,11 +287,11 @@ public class ARGUIManager : MonoBehaviour
                 _midPanelRectTrans.anchoredPosition = new Vector2(lerpToPos.x, _midPanelRectTrans.anchoredPosition.y);
             }
 
-            Vector2 detailCurrentPos = _DetailPanel.scrollRect.content.anchoredPosition;
-            if (detailCurrentPos != _DetailPanel.targetPosition)
+            Vector2 detailCurrentPos = _detailPanel.scrollRect.content.anchoredPosition;
+            if (detailCurrentPos != _detailPanel.targetPosition)
             {
-                Vector2 lerpToPos = Vector2.Lerp(detailCurrentPos, _DetailPanel.targetPosition, panelSlideSpeed * Time.deltaTime);
-                _DetailPanel.scrollRect.content.anchoredPosition = new Vector2(_DetailPanel.scrollRect.content.anchoredPosition.x, lerpToPos.y);
+                Vector2 lerpToPos = Vector2.Lerp(detailCurrentPos, _detailPanel.targetPosition, panelSlideSpeed * Time.deltaTime);
+                _detailPanel.scrollRect.content.anchoredPosition = new Vector2(_detailPanel.scrollRect.content.anchoredPosition.x, lerpToPos.y);
             }
         }
 
@@ -311,12 +327,12 @@ public class ARGUIManager : MonoBehaviour
 
         if (Input.GetKeyDown(KeyCode.UpArrow))
         {
-            _DetailPanel.Scroll(ScrollType.Down);
+            _detailPanel.Scroll(ScrollType.Down);
         }
 
         if (Input.GetKeyDown(KeyCode.DownArrow))
         {
-            _DetailPanel.Scroll(ScrollType.Up);
+            _detailPanel.Scroll(ScrollType.Up);
         }
     }
 
@@ -341,25 +357,38 @@ public class ARGUIManager : MonoBehaviour
         cg.alpha = show ? 1 : 0;
     }
 
+    string _cachedImagePath = "";
     void SnapShot()
     {
-        ScreenCapture capture = GetComponent<ScreenCapture>();
+        //ScreenCapture capture = GetComponent<ScreenCapture>();
 
-        string filePath;
-        string subPath;
-#if UNITY_ANDROID && !UNITY_EDITOR
-        subPath = Constants.PhoneSDCardPath;
-        filePath = subPath + capture.GetFileName(resolution.width, resolution.height);
-#elif UNITY_EDITOR
-        subPath = Application.dataPath + "/Screenshots/";
-        if (!Directory.Exists(subPath))
-            Directory.CreateDirectory(subPath);
-        filePath = subPath + capture.GetFileName(resolution.width, resolution.height);
-#endif
-        Debug.Log("File path: " + filePath);
-        capture.SaveScreenshot(CaptureMethod.ReadPixels_Asynch, filePath);
+        //        string filePath;
+        //        string subPath;
+        //#if UNITY_ANDROID && !UNITY_EDITOR
+        //        subPath = Constants.PhoneSDCardPath;
+        //        filePath = subPath + capture.GetFileName(resolution.width, resolution.height);
+        //#elif UNITY_EDITOR
+        //        subPath = Application.dataPath + "/Screenshots/";
+        //        if (!Directory.Exists(subPath))
+        //            Directory.CreateDirectory(subPath);
+        //        filePath = subPath + capture.GetFileName(resolution.width, resolution.height);
+        //#endif
+        //        Debug.Log("File path: " + filePath);
+        //        capture.SaveScreenshot(CaptureMethod.ReadPixels_Asynch, filePath);
 
-        Directory.GetFiles(filePath);
+        //        Directory.GetFiles(filePath);
+
+        //float x = (Screen.width * 0.5f) - (resolution.width * 0.5f);
+        //float y = Screen.height - resolution.height;
+        //Rect rect = new Rect(x, y, resolution.width, resolution.height);
+        //NativeToolkit.SaveScreenshot(ScreenCapture.GetFileName(resolution.width, resolution.height), Application.productName, screenArea: rect);
+
+        Texture2D tex = new Texture2D(_camTex.width, _camTex.height);
+        tex.SetPixels(_camTex.GetPixels());
+        tex.Apply();
+
+        string fileName = ScreenCapture.GetFileName(resolution.width, resolution.height);
+        NativeToolkit.SaveImage(tex, fileName);
     }
 
     void NextPanel()

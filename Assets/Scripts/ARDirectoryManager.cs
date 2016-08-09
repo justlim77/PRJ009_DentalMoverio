@@ -2,7 +2,6 @@
 using System.Collections;
 using System.IO;
 using System.Linq;
-//using ICSharpCode;
 
 public class ARDirectoryManager : MonoBehaviour
 {

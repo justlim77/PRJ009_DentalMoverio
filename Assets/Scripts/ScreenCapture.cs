@@ -184,11 +184,18 @@ public class ScreenCapture : MonoBehaviour
             return null;
     }
 
-    public string GetFileName(int width, int height)
+    //public string GetFileName(int width, int height)
+    //{
+    //    string type = imageType.ToString().ToLower();
+    //    return string.Format("IMG_{0}.{1}",
+    //        System.DateTime.Now.ToString("yyyyMMdd_HHmmss"),
+    //        type);
+    //}
+
+    public static string GetFileName(int width, int height)
     {
-        string type = imageType.ToString().ToLower();
-        return string.Format("IMG_{0}.{1}",
-            System.DateTime.Now.ToString("yyyyMMdd_HHmmss"),
-            type);
+        return string.Format("IMG_{0}",
+            System.DateTime.Now.ToString("yyyyMMdd_HHmmss")
+            );
     }
 }
