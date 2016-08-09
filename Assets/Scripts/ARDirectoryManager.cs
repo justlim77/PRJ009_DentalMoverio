@@ -2,19 +2,46 @@
 using System.Collections;
 using System.IO;
 using System.Linq;
+using System;
+
+public class ImageBlob
+{
+    public string Name;
+    public int Index;
+    public string Path;
+
+    public ImageBlob() { }
+    public ImageBlob(string name, int index, string path)
+    {
+        Name = name;
+        Index = index;
+        Path = path;
+    }
+}
 
 public class ARDirectoryManager : MonoBehaviour
 {
-    static ARDirectoryManager _Instance;
+    public static event Action<int> OnDirectoryReadComplete;
+    public static event Action<ImageBlob> OnImageLoadStart;
+    public static event Action<string> OnImageLoadComplete;
+
+    static GameObject _go;
+    static ARDirectoryManager _Instance = null;
     public static ARDirectoryManager Instance
     {
         get 
         {
             if (_Instance == null)
-                Debug.Log("ARDirectoryManager not yet initialized.");
+            {
+                _go = new GameObject();
+                _go.name = "ARDirectoryManager";
+                _Instance = _go.AddComponent<ARDirectoryManager>();
+            }
+
             return _Instance;
         }
     }
+
 
     public static string ImageFolderPath
     {
@@ -30,77 +57,8 @@ public class ARDirectoryManager : MonoBehaviour
                 Directory.CreateDirectory(path);
                 Debug.Log("Path not found! Creating folder at " + path);
             }
-            //Debugger.Instance.Log("Image Folder path located at " + path);
 
             return path;
-        }
-    }
-
-    static string _FacialPath;
-    public static string FacialPath
-    {
-        get
-        {
-            string path = Path.Combine(Application.persistentDataPath, "facial");
-            if (!Directory.Exists(path))
-            {
-                Directory.CreateDirectory(path);
-                Debugger.Instance.Log("Facial Path not found! Creating folder: " + path);
-            }
-
-            _FacialPath = path;
-            return _FacialPath;
-        }
-    }
-
-    static string _FacialFrontPath;
-    public static string FacialFrontPath
-    {
-        get
-        {
-            string path = Path.Combine(FacialPath, "front");
-            if (!Directory.Exists(path))
-            {
-                Directory.CreateDirectory(path);
-                Debugger.Instance.Log("Facial Front Path not found! Creating folder: " + path);
-            }
-
-            _FacialFrontPath = path;
-            return _FacialFrontPath;
-        }
-    }
-
-    static string _FacialObliquePath;
-    public static string FacialObliquePath
-    {
-        get
-        {
-            string path = Path.Combine(FacialPath, "oblique");
-            if (!Directory.Exists(path))
-            {
-                Directory.CreateDirectory(path);
-                Debugger.Instance.Log("Facial Oblique Path not found! Creating folder: " + path);
-            }
-
-            _FacialObliquePath = path;
-            return _FacialObliquePath;
-        }
-    }
-
-    static string _FacialSidePath;
-    public static string FacialSidePath
-    {
-        get
-        {
-            string path = Path.Combine(FacialPath, "side");
-            if (!Directory.Exists(path))
-            {
-                Directory.CreateDirectory(path);
-                Debugger.Instance.Log("Facial Side Path not found! Creating folder: " + path);
-            }
-
-            _FacialSidePath = path;
-            return _FacialSidePath;
         }
     }
 
@@ -111,8 +69,7 @@ public class ARDirectoryManager : MonoBehaviour
         {
 #if UNITY_EDITOR
             string path = Path.Combine(Application.streamingAssetsPath, "videos");
-#elif UNITY_ANDROID
-            //string path = Application.persistentDataPath +  "/videos";          
+#elif UNITY_ANDROID        
             string path = Path.Combine(Application.persistentDataPath, "videos");          
 #endif
             if (!Directory.Exists(path))
@@ -121,8 +78,6 @@ public class ARDirectoryManager : MonoBehaviour
                 Debugger.Instance.Log("Video path not found! Creating folder: " + path);
             }
 
-            //Debugger.Instance.Log("Video Folder Path located at : " + path);
-
             _VideoPath = path;
             return _VideoPath;
         }
@@ -130,91 +85,87 @@ public class ARDirectoryManager : MonoBehaviour
 
     void Awake()
     {
-        _Instance = this;
-
-        //if (Application.platform == RuntimePlatform.Android)
-        //{ 
-        //    if (InitializeDirectory() == false)
-        //        Debugger.Instance.Log("ARDirectoryManager.InitializeDirectory failed to initialize!");
-        //    else
-        //        Debugger.Instance.Log("ARDirectoryManager.InitializeDirectory succeeded!");
-        //}
-    }
-
-
-    void OnDestroy()
-    {
-        _Instance = null;
+        if (_Instance != null && _Instance != this)
+        {
+            Destroy(this.gameObject);
+        }
     }
 
     public static Texture2D[] TextureArray;
     public static DetailedImage[] TextureDetails;
     public static string[] FilePaths;
+    public static int FileAmount;
     static string _PathPrefix = "";
 
     public static IEnumerator LoadLocalImages()
     {
+        Instance.Awake();
+
         string path = ImageFolderPath;
 
         _PathPrefix = @"file://";
 
-        Debugger.Instance.Log(string.Format("LoadLocalImages image path: {0}", path));
 #if UNITY_EDITOR
-        string[] filePaths = Directory.GetFiles(path, "*.jpg").OrderBy(f => f).ToArray<string>();
+        FilePaths = Directory.GetFiles(path, "*.jpg").OrderBy(f => f).ToArray<string>();
 #elif UNITY_ANDROID
-        string[] filePaths = Directory.GetFiles(path);
+        FilePaths = Directory.GetFiles(path);
 #endif
-        foreach (var filePath in filePaths)
-        {
-            Debugger.Instance.Log(string.Format("LoadLocalImages from {0}", filePath));
-        }
-        FilePaths = filePaths;
+        FileAmount = FilePaths.Length;
 
-        string[] titles = new string[FilePaths.Length];
+        Instance.DirectoryReadComplete(FileAmount);
+
+        string[] titles = new string[FileAmount];
 
         //load all images in default folder as textures
-        TextureDetails = new DetailedImage[FilePaths.Length];
+        TextureDetails = new DetailedImage[FileAmount];
 
-        int fileAmount = FilePaths.Length;
-        for(int i = 0; i < fileAmount; i++)
+        for(int i = 0; i < FileAmount; i++)
         {
             string tempPath = _PathPrefix + FilePaths[i];
-            Debugger.Instance.Log(tempPath);
-            Debug.Log(tempPath);
+            string title = Path.GetFileNameWithoutExtension(tempPath);
+            int index = i + 1;
+            ImageBlob imageBlob = new ImageBlob(title, index, FilePaths[i]);
+            Instance.ImageLoadStart(imageBlob);
+
             Texture2D tex = new Texture2D(4, 4, TextureFormat.DXT1, false);
             WWW www = new WWW(tempPath);
             yield return www;
             www.LoadImageIntoTexture(tex);
 
             DetailedImage image = new DetailedImage();
-
-            string title = Path.GetFileNameWithoutExtension(tempPath);
             image.Texture2D = tex;
             image.Title = title;
             TextureDetails[i] = image;
+
+            if (index >= FileAmount)
+            {
+                Instance.ImageLoadComplete("Complete");
+            }
         }
     }
 
-    bool InitializeDirectory()
+    public void DirectoryReadComplete(int result)
     {
-        bool result = true;
+        if (OnDirectoryReadComplete != null)
+        {
+            OnDirectoryReadComplete(result);
+        }
+    }
 
-        if (FacialPath == null)
-            result = false;
+    public void ImageLoadStart(ImageBlob result)
+    {
+        if (OnImageLoadStart != null)
+        {
+            OnImageLoadStart(result);
+        }
+    }
 
-        if (FacialFrontPath == null)
-            result = false;
-
-        if (FacialObliquePath == null)
-            result = false;
-
-        if (FacialSidePath == null)
-            result = false;
-
-        if (VideoPath == null)
-            result = false;
-
-        return result;
+    public void ImageLoadComplete(string result)
+    {
+        if (OnImageLoadComplete != null)
+        {
+            OnImageLoadComplete(result);
+        }
     }
 
     public string GetStreamingAssetsPath(string folderName)

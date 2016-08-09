@@ -62,13 +62,13 @@ public class ARGUIManager : MonoBehaviour
     {
         if (Instance != null && Instance != this)
             Destroy(this.gameObject);
-
-        Core.SubscribeEvent("OnPanelOpened", OnPanelOpened);
-        Core.SubscribeEvent("OnToggleBars", OnBarsToggled);
     }
 
     void OnEnable()
     {
+        Core.SubscribeEvent("OnPanelOpened", OnPanelOpened);
+        Core.SubscribeEvent("OnToggleBars", OnBarsToggled);
+
         NativeToolkit.OnImageSaved += NativeToolkit_OnImageSaved;
     }
 
