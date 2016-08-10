@@ -69,7 +69,15 @@ public class ARGUIManager : MonoBehaviour
         Core.SubscribeEvent("OnPanelOpened", OnPanelOpened);
         Core.SubscribeEvent("OnToggleBars", OnBarsToggled);
 
+        InputControls.GestureDetected += OnGestureDetected;     //Moverio 4.5 ~ 4.6 with Input.GetMouse events
+
         NativeToolkit.OnImageSaved += NativeToolkit_OnImageSaved;
+        ARDirectoryManager.OnImageLoadComplete += ARDirectoryManager_OnImageLoadComplete;
+    }
+
+    private void ARDirectoryManager_OnImageLoadComplete(string obj)
+    {
+        btnLoad.gameObject.SetActive(true);
     }
 
     private void NativeToolkit_OnImageSaved(string obj)
@@ -84,6 +92,7 @@ public class ARGUIManager : MonoBehaviour
 
         btnLoad.onClick.AddListener(() => DetailPanel.OpenPanel());
         btnLoad.onClick.AddListener(() => StartApp());
+        btnLoad.gameObject.SetActive(false);
 
         btnFacial.onClick.AddListener(() => DetailPanel.OpenPanel());
         btnFacial.onClick.AddListener(() => StopFeed());
@@ -96,8 +105,6 @@ public class ARGUIManager : MonoBehaviour
 
         btnSnapshot.onClick.AddListener(() => SnapShot());
         btnGallery.onClick.AddListener(() => NativeToolkit.PickImage());
-
-        InputControls.GestureDetected += OnGestureDetected;     //Moverio 4.5 ~ 4.6 with Input.GetMouse events
 
         if (TopBar != null)
         { 
@@ -229,6 +236,7 @@ public class ARGUIManager : MonoBehaviour
 
         TouchControls.GestureDetected -= OnGestureDetected;
         NativeToolkit.OnImageSaved -= NativeToolkit_OnImageSaved;
+        ARDirectoryManager.OnImageLoadComplete -= ARDirectoryManager_OnImageLoadComplete;
 
         Core.UnsubscribeEvent("OnOpenPanel", OnPanelOpened);
     }
@@ -242,7 +250,7 @@ public class ARGUIManager : MonoBehaviour
 
             foreach (var ARPanel in ARGUIPanels)
             {
-                //ARPanel.SetActive(false);
+                ARPanel.SetActive(false);
             }
 
             panel.SetActive(true);
@@ -265,7 +273,6 @@ public class ARGUIManager : MonoBehaviour
             }
 
             _currentPanelIdx = Array.IndexOf(ARGUIPanels, panel);
-            //Debug.Log("Current panel index: " + _currentPanelIdx);
 
             string msg = panel.panelType.ToString();
             Core.BroadcastEvent("OnUpdateHeader", this, msg);

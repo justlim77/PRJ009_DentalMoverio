@@ -59,7 +59,8 @@ public class ARProgressBar : MonoBehaviour
 
     private void ARDirectoryManager_OnImageLoadStart(ImageBlob obj)
     {
-        image.fillAmount = obj.Index / _filesToLoad;
+        //image.fillAmount = obj.Index / _filesToLoad;
+        _targetRatio = obj.Index / _filesToLoad;
         label.text = string.Format("Loading {0}", obj.Path);
     }
 
@@ -81,9 +82,9 @@ public class ARProgressBar : MonoBehaviour
     // Update is called once per frame
     void Update ()
     {
-        if (image.fillAmount != _targetRatio)
-        {
-            image.fillAmount = Mathf.Lerp(image.fillAmount, _targetRatio, Time.deltaTime * lerpSpeed);
-        }
+        //if (image.fillAmount != _targetRatio)
+        //{
+        //    image.fillAmount = Mathf.Lerp(image.fillAmount, _targetRatio, Time.deltaTime * lerpSpeed);
+        //}
 	}
 }

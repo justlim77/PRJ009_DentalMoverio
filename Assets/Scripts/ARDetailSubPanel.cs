@@ -42,7 +42,7 @@ public class ARDetailSubPanel : MonoBehaviour
 
     public void SetTitle(string title)
     {
-        text.text = title;
+        //text.text = title;
     }
 
     public void SetInitialPosition()

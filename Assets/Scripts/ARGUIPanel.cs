@@ -16,6 +16,7 @@ public enum PanelType
 public class ARGUIPanel : MonoBehaviour 
 {
     public PanelType panelType = PanelType.Home;
+    public Button button;
 
     Vector2 _initialPos;
 
@@ -64,17 +65,26 @@ public class ARGUIPanel : MonoBehaviour
         _initialPos = rectTransform.anchoredPosition;
     }
 
+    Vector2 _scaleTo = new Vector2(1.1f, 1.1f);
     public void OpenPanel()
     {
         Core.BroadcastEvent("OnPanelOpened", this, this);
         SetActive(true);
     }
 
+    public void ClosePanel()
+    {
+        if (button != null)
+            button.GetComponent<RectTransform>().localScale = Vector2.one;
+    }
+
     public void SetActive(bool value)
     {
         canvasGroup.alpha = value ? 1 : 0;
         canvasGroup.blocksRaycasts = value;
-
+        if (button != null)
+            button.GetComponent<RectTransform>().localScale = value ? _scaleTo : Vector2.one;
+        
         //Refresh();
     }
 
