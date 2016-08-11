@@ -4,6 +4,15 @@ using System.IO;
 using System.Linq;
 using System;
 
+public enum FileType
+{
+    Details,
+    Radiograph,
+    Movement,
+    Simulation,
+    Video
+}
+
 public class ImageBlob
 {
     public string Name;
@@ -62,6 +71,70 @@ public class ARDirectoryManager : MonoBehaviour
         }
     }
 
+    public static string DetailsFolderPath
+    {
+        get
+        {
+            string path = Path.Combine(ImageFolderPath, "details");
+
+            if (!Directory.Exists(path))
+            {
+                Directory.CreateDirectory(path);
+                Debug.Log("Path not found! Creating folder at " + path);
+            }
+
+            return path;
+        }
+    }
+
+    public static string RadiographsImagePath
+    {
+        get
+        {
+            string path = Path.Combine(ImageFolderPath, "radiographs");
+
+            if (!Directory.Exists(path))
+            {
+                Directory.CreateDirectory(path);
+                Debug.Log("Path not found! Creating folder at " + path);
+            }
+
+            return path;
+        }
+    }
+
+    public static string SurgeryMovementImagePath
+    {
+        get
+        {
+            string path = Path.Combine(ImageFolderPath, "surgerymovement");
+
+            if (!Directory.Exists(path))
+            {
+                Directory.CreateDirectory(path);
+                Debug.Log("Path not found! Creating folder at " + path);
+            }
+
+            return path;
+        }
+    }
+
+    public static string SurgicalSimulationImagePath
+    {
+        get
+        {
+            string path = Path.Combine(ImageFolderPath, "surgicalsimulation");
+
+            if (!Directory.Exists(path))
+            {
+                Directory.CreateDirectory(path);
+                Debug.Log("Path not found! Creating folder at " + path);
+            }
+
+            return path;
+        }
+    }
+
     static string _VideoPath;
     public static string VideoPath
     {
@@ -92,39 +165,128 @@ public class ARDirectoryManager : MonoBehaviour
     }
 
     public static Texture2D[] TextureArray;
-    public static DetailedImage[] TextureDetails;
+
+    public static string[] DetailFilePaths;
+    public static string[] RadiographFilePaths;
+    public static string[] MovementFilePaths;
+    public static string[] SimulationFilePaths;
+
+    public static DetailedImage[] DetailTextures;
+    public static DetailedImage[] RadiographTextures;
+    public static DetailedImage[] MovementTextures;
+    public static DetailedImage[] SimulationTextures;
+
     public static string[] FilePaths;
     public static int FileAmount;
+
     static string _PathPrefix = "";
+
+    public static bool Initialized
+    { get; private set; }
 
     public static IEnumerator LoadLocalImages()
     {
         Instance.Awake();
+
+        Initialized = false;
 
         string path = ImageFolderPath;
 
         _PathPrefix = @"file://";
 
 #if UNITY_EDITOR
-        FilePaths = Directory.GetFiles(path, "*.jpg").OrderBy(f => f).ToArray<string>();
+        string[] detailsFilePaths = Directory.GetFiles(DetailsFolderPath, "*.jpg");
 #elif UNITY_ANDROID
-        FilePaths = Directory.GetFiles(path);
+        string[] detailsFilePaths = Directory.GetFiles(DetailsFolderPath);
 #endif
-        FileAmount = FilePaths.Length;
+        int detailsFileAmount = detailsFilePaths.Length;
+        DetailTextures = new DetailedImage[detailsFileAmount];
+        FileAmount += detailsFileAmount;
+
+#if UNITY_EDITOR
+        string[] radiographsFilePaths = Directory.GetFiles(RadiographsImagePath, "*.jpg");
+#elif UNITY_ANDROID
+        string[] radiographsFilePaths = Directory.GetFiles(RadiographsImagePath);
+#endif
+        int radiographFileAmount = radiographsFilePaths.Length;
+        RadiographTextures = new DetailedImage[radiographFileAmount];
+        FileAmount += radiographFileAmount;
+
+#if UNITY_EDITOR
+        string[] surgeryMovementFilePaths = Directory.GetFiles(SurgeryMovementImagePath, "*.jpg");
+#elif UNITY_ANDROID
+        string[] surgeryMovementFilePaths = Directory.GetFiles(SurgeryMovementImagePath);
+#endif
+        int movementFileAmount = surgeryMovementFilePaths.Length;
+        MovementTextures = new DetailedImage[movementFileAmount];
+        FileAmount += movementFileAmount;
+
+#if UNITY_EDITOR
+        string[] surgicalSimulationFilePaths = Directory.GetFiles(SurgicalSimulationImagePath, "*.jpg");
+#elif UNITY_ANDROID
+        string[] surgicalSimulationFilePaths = Directory.GetFiles(SurgicalSimulationImagePath);
+#endif
+        int simulationFileAmount = surgicalSimulationFilePaths.Length;
+        SimulationTextures = new DetailedImage[simulationFileAmount];
+        FileAmount += simulationFileAmount;
+
+        //#if UNITY_EDITOR
+        //        FilePaths = Directory.GetFiles(path, "*.jpg").OrderBy(f => f).ToArray<string>();
+        //#elif UNITY_ANDROID
+        //        FilePaths = Directory.GetFiles(path);
+        //#endif
 
         Instance.DirectoryReadComplete(FileAmount);
 
         string[] titles = new string[FileAmount];
 
         //load all images in default folder as textures
-        TextureDetails = new DetailedImage[FileAmount];
+        yield return Instance.StartCoroutine(Instance.GrabImages(FileType.Details, detailsFilePaths));
+        yield return Instance.StartCoroutine(Instance.GrabImages(FileType.Radiograph, radiographsFilePaths));
+        yield return Instance.StartCoroutine(Instance.GrabImages(FileType.Movement, surgeryMovementFilePaths));
+        yield return Instance.StartCoroutine(Instance.GrabImages(FileType.Simulation, surgicalSimulationFilePaths));
 
-        for(int i = 0; i < FileAmount; i++)
+        Instance.ImageLoadComplete("Complete");
+
+        Initialized = true;
+        //if (index >= FileAmount)
+        //{
+        //    Instance.ImageLoadComplete("Complete");
+        //}
+        //for(int i = 0; i < FileAmount; i++)
+        //{
+        //    string tempPath = _PathPrefix + FilePaths[i];
+        //    string title = Path.GetFileNameWithoutExtension(tempPath);
+        //    int index = i + 1;
+        //    ImageBlob imageBlob = new ImageBlob(title, index, FilePaths[i]);
+        //    Instance.ImageLoadStart(imageBlob);
+
+        //    Texture2D tex = new Texture2D(4, 4, TextureFormat.DXT1, false);
+        //    WWW www = new WWW(tempPath);
+        //    yield return www;
+        //    www.LoadImageIntoTexture(tex);
+
+        //    DetailedImage image = new DetailedImage();
+        //    image.Texture2D = tex;
+        //    image.Title = title;
+        //    DetailTextures[i] = image;
+
+        //    if (index >= FileAmount)
+        //    {
+        //        Instance.ImageLoadComplete("Complete");
+        //    }
+        //}
+    }
+
+    IEnumerator GrabImages(FileType fileType, string[] filePaths)
+    {
+        for (int i = 0; i < filePaths.Length; i++)
         {
-            string tempPath = _PathPrefix + FilePaths[i];
+            string tempPath = _PathPrefix + filePaths[i];
             string title = Path.GetFileNameWithoutExtension(tempPath);
             int index = i + 1;
-            ImageBlob imageBlob = new ImageBlob(title, index, FilePaths[i]);
+            ImageBlob imageBlob = new ImageBlob(title, index, filePaths[i]);
+
             Instance.ImageLoadStart(imageBlob);
 
             Texture2D tex = new Texture2D(4, 4, TextureFormat.DXT1, false);
@@ -135,11 +297,20 @@ public class ARDirectoryManager : MonoBehaviour
             DetailedImage image = new DetailedImage();
             image.Texture2D = tex;
             image.Title = title;
-            TextureDetails[i] = image;
-
-            if (index >= FileAmount)
+            switch (fileType)
             {
-                Instance.ImageLoadComplete("Complete");
+                case FileType.Details:
+                    DetailTextures[i] = image;
+                    break;
+                case FileType.Radiograph:
+                    RadiographTextures[i] = image;
+                    break;
+                case FileType.Movement:
+                    MovementTextures[i] = image;
+                    break;
+                case FileType.Simulation:
+                    SimulationTextures[i] = image;
+                    break;
             }
         }
     }

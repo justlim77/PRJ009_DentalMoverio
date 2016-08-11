@@ -22,15 +22,19 @@ public class ARGUIManager : MonoBehaviour
     [SerializeField] ARGUIPanel[] ARGUIPanels;
     [Header("Content Panels")]
     [SerializeField] ARGUIPanel DetailPanel;
-    //[SerializeField] ARGUIPanel RadiographPanel;
+    [SerializeField] ARGUIPanel RadiographsPanel;
+    [SerializeField] ARGUIPanel MovementPanel;
+    [SerializeField] ARGUIPanel SimulationPanel;
     [SerializeField] ARGUIPanel VideoPanel;
     [SerializeField] ARGUIPanel CameraPanel;
     [SerializeField] ARGUIPanel HomePanel;
     [SerializeField] GameObject MidPanel;
     [SerializeField] ARGUIPanel MutePanel;
     [Header("Buttons")]
-    [SerializeField] Button btnFacial;
-    //[SerializeField] Button btnRadiograph;
+    [SerializeField] Button btnDetails;
+    [SerializeField] Button btnRadiograph;
+    [SerializeField] Button btnMovement;
+    [SerializeField] Button btnSimulation;
     [SerializeField] Button btnVideo;
     [SerializeField] Button btnCamera;
     [SerializeField] Button btnGallery;
@@ -49,7 +53,7 @@ public class ARGUIManager : MonoBehaviour
     WebCamTexture _camTex;
     CanvasGroup _topBarCanvasGroup, _botBarCanvasGroup;
     RectTransform _midPanelRectTrans, _homePanelRectTrans;
-    ARDetailPanel _detailPanel;
+    ARDetailPanel _currentDetailPanel;
     int _currentPanelIdx;
 
     protected virtual void OnPanelChanged(PanelType type)
@@ -94,8 +98,17 @@ public class ARGUIManager : MonoBehaviour
         btnLoad.onClick.AddListener(() => StartApp());
         btnLoad.gameObject.SetActive(false);
 
-        btnFacial.onClick.AddListener(() => DetailPanel.OpenPanel());
-        btnFacial.onClick.AddListener(() => StopFeed());
+        btnDetails.onClick.AddListener(() => DetailPanel.OpenPanel());
+        btnDetails.onClick.AddListener(() => StopFeed());
+
+        btnRadiograph.onClick.AddListener(() => RadiographsPanel.OpenPanel());
+        btnRadiograph.onClick.AddListener(() => StopFeed());
+
+        btnMovement.onClick.AddListener(() => MovementPanel.OpenPanel());
+        btnMovement.onClick.AddListener(() => StopFeed());
+
+        btnSimulation.onClick.AddListener(() => SimulationPanel.OpenPanel());
+        btnSimulation.onClick.AddListener(() => StopFeed());
 
         btnVideo.onClick.AddListener(() => VideoPanel.OpenPanel());
         btnVideo.onClick.AddListener(() => StopFeed());
@@ -146,8 +159,9 @@ public class ARGUIManager : MonoBehaviour
         _midPanelRectTrans = MidPanel.GetComponent<RectTransform>();
         MidPanel.GetComponent<ScrollRect>().enabled = false;
 
+        StartCoroutine(ARDirectoryManager.LoadLocalImages());
         // Setup detail panel
-        _detailPanel = DetailPanel.GetComponent<ARDetailPanel>();
+        //_currentDetailPanel = DetailPanel.GetComponent<ARDetailPanel>();
     }
 
     private void OnGestureDetected(object source, GestureDetectedEventArgs e)
@@ -163,10 +177,10 @@ public class ARGUIManager : MonoBehaviour
                 PreviousPanel();
                 break;
             case TouchType.Up:
-                _detailPanel.Scroll(ScrollType.Up);
+                _currentDetailPanel.Scroll(ScrollType.Up);
                 break;
             case TouchType.Down:
-                _detailPanel.Scroll(ScrollType.Down);
+                _currentDetailPanel.Scroll(ScrollType.Down);
                 break;
             //case TouchType.DoubleTap:
             //    MoverioCameraController controller = MoverioCameraController.Instance;
@@ -228,7 +242,10 @@ public class ARGUIManager : MonoBehaviour
     {
         btnLoad.onClick.RemoveAllListeners();
         btnMenu.onClick.RemoveAllListeners();
-        btnFacial.onClick.RemoveAllListeners();
+        btnDetails.onClick.RemoveAllListeners();
+        btnRadiograph.onClick.RemoveAllListeners();
+        btnMovement.onClick.RemoveAllListeners();
+        btnSimulation.onClick.RemoveAllListeners();
         btnVideo.onClick.RemoveAllListeners();
         btnCamera.onClick.RemoveAllListeners();
         btnGallery.onClick.RemoveAllListeners();
@@ -261,7 +278,14 @@ public class ARGUIManager : MonoBehaviour
                     _PanelTargetPos = panel.GetInversedInitialPos();
                     LaunchFeed();
                     break;
-                case PanelType.Details:
+                case PanelType.PatientDetails:
+                case PanelType.Radiographs:
+                case PanelType.SurgeryMovement:
+                case PanelType.SurgicalSimulation:
+                    StopFeed();
+                    _currentDetailPanel = panel.GetComponent<ARDetailPanel>();
+                    _PanelTargetPos = panel.GetInversedInitialPos();
+                    break;
                 case PanelType.Video:
                     StopFeed();
                     _PanelTargetPos = panel.GetInversedInitialPos();
@@ -294,11 +318,14 @@ public class ARGUIManager : MonoBehaviour
                 _midPanelRectTrans.anchoredPosition = new Vector2(lerpToPos.x, _midPanelRectTrans.anchoredPosition.y);
             }
 
-            Vector2 detailCurrentPos = _detailPanel.scrollRect.content.anchoredPosition;
-            if (detailCurrentPos != _detailPanel.targetPosition)
+            if (_currentDetailPanel != null)
             {
-                Vector2 lerpToPos = Vector2.Lerp(detailCurrentPos, _detailPanel.targetPosition, panelSlideSpeed * Time.deltaTime);
-                _detailPanel.scrollRect.content.anchoredPosition = new Vector2(_detailPanel.scrollRect.content.anchoredPosition.x, lerpToPos.y);
+                Vector2 detailCurrentPos = _currentDetailPanel.scrollRect.content.anchoredPosition;
+                if (detailCurrentPos != _currentDetailPanel.targetPosition)
+                {
+                    Vector2 lerpToPos = Vector2.Lerp(detailCurrentPos, _currentDetailPanel.targetPosition, panelSlideSpeed * Time.deltaTime);
+                    _currentDetailPanel.scrollRect.content.anchoredPosition = new Vector2(_currentDetailPanel.scrollRect.content.anchoredPosition.x, lerpToPos.y);
+                }
             }
         }
 
@@ -334,12 +361,12 @@ public class ARGUIManager : MonoBehaviour
 
         if (Input.GetKeyDown(KeyCode.UpArrow))
         {
-            _detailPanel.Scroll(ScrollType.Down);
+            _currentDetailPanel.Scroll(ScrollType.Down);
         }
 
         if (Input.GetKeyDown(KeyCode.DownArrow))
         {
-            _detailPanel.Scroll(ScrollType.Up);
+            _currentDetailPanel.Scroll(ScrollType.Up);
         }
     }
 

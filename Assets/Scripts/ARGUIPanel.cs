@@ -7,7 +7,10 @@ public enum PanelType
 {
     Blocker,
     Home,
-    Details,
+    PatientDetails,
+    Radiographs,
+    SurgeryMovement,
+    SurgicalSimulation,
     Video,
     Camera
 }
@@ -16,6 +19,7 @@ public enum PanelType
 public class ARGUIPanel : MonoBehaviour 
 {
     public PanelType panelType = PanelType.Home;
+    public string panelHeader = "PanelName";
     public Button button;
 
     Vector2 _initialPos;

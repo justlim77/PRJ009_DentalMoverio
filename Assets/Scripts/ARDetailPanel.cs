@@ -22,6 +22,8 @@ public class ARDetailPanel : MonoBehaviour
     public delegate void DetailPanelChangedEventHandler(object sender, DetailPanelChangedEventArgs e);
     public static event DetailPanelChangedEventHandler DetailPanelChanged;
 
+    public FileType fileType;
+
     public GameObject subPanelPrefab;
     public Resolution subPanelResolution;
     public float panelSlideSpeed = 5.0f;
@@ -97,9 +99,26 @@ public class ARDetailPanel : MonoBehaviour
         }
     }
 
-    public void LoadImages(DetailedImage[] textureDetails)
+    public void LoadImages(FileType fileType)
     {
         scrollRect.content.transform.Clear();
+        DetailedImage[] textureDetails = new DetailedImage[0];
+
+        switch (fileType)
+        {
+            case FileType.Details:
+                textureDetails = ARDirectoryManager.DetailTextures;
+                break;
+            case FileType.Radiograph:
+                textureDetails = ARDirectoryManager.RadiographTextures;
+                break;
+            case FileType.Movement:
+                textureDetails = ARDirectoryManager.MovementTextures;
+                break;
+            case FileType.Simulation:
+                textureDetails = ARDirectoryManager.SimulationTextures;
+                break;
+        }        
 
         _textureAmount = textureDetails.Length;
 
@@ -131,9 +150,11 @@ public class ARDetailPanel : MonoBehaviour
 
     IEnumerator Load()
     {
-        yield return StartCoroutine(ARDirectoryManager.LoadLocalImages());
+        //yield return StartCoroutine(ARDirectoryManager.LoadLocalImages());
+        while (!ARDirectoryManager.Initialized)
+            yield return null;
 
-        LoadImages(ARDirectoryManager.TextureDetails);
+        LoadImages(fileType);
 
         previousButton.onClick.AddListener(delegate { Scroll(ScrollType.Down); });
         nextButton.onClick.AddListener(delegate { Scroll(ScrollType.Up); });
@@ -175,11 +196,15 @@ public class ARDetailPanel : MonoBehaviour
 
     public void UpdateButtonVisuals()
     {
-        if (_currentPanelIndex <= 0)
+        if (_textureAmount == 1)
+        {
+            previousButton.image.CrossFadeAlpha(0, 0.25f, true);
+            nextButton.image.CrossFadeAlpha(0, 0.25f, true);
+        }
+        else if (_currentPanelIndex <= 0)
         {
             previousButton.image.CrossFadeAlpha(0, 0.25f, true);
         }
-
         else if (_currentPanelIndex >= _textureAmount - 1)
         {
             nextButton.image.CrossFadeAlpha(0, 0.25f, true);
