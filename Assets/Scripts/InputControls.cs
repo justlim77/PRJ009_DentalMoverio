@@ -12,6 +12,12 @@ public class InputControls : MonoBehaviour
     public delegate void GestureDetectedEventHandler(object source, GestureDetectedEventArgs e);
     public static event GestureDetectedEventHandler GestureDetected;
 
+    public delegate void BackButtonPressedEventHandler(object source, EventArgs e);
+    public static event BackButtonPressedEventHandler BackButtonPressed;
+
+    public delegate void SettingButtonPressedEventHandler(object source, EventArgs e);
+    public static event SettingButtonPressedEventHandler SettingButtonPressed;
+
     [Header("Button mapping")]
     public KeyCode FirstTouch = KeyCode.Mouse0;
     public KeyCode SecondTouch = KeyCode.Mouse1;
@@ -51,6 +57,18 @@ public class InputControls : MonoBehaviour
     {
         if (GestureDetected != null)
             GestureDetected(this, new GestureDetectedEventArgs() { TouchType = type });
+    }
+
+    protected virtual void OnBackButtonPressed()
+    {
+        if (BackButtonPressed != null)
+            BackButtonPressed(this, new EventArgs() { });
+    }
+
+    protected virtual void OnSettingButtonPressed()
+    {
+        if (SettingButtonPressed != null)
+            SettingButtonPressed(this, new EventArgs() { });
     }
 
     void Start ()
@@ -144,6 +162,16 @@ public class InputControls : MonoBehaviour
         if (Input.GetKeyDown(ScrollLeft))
         {
             touchType = TouchType.Left;
+        }
+
+        if (Input.GetKeyDown(Back))
+        {
+            OnBackButtonPressed();
+        }
+
+        if (Input.GetKeyDown(Settings))
+        {
+            OnSettingButtonPressed();
         }
 
         //if(swiping == true && from == to)

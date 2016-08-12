@@ -70,33 +70,11 @@ public class ARGUIManager : MonoBehaviour
 
     void OnEnable()
     {
-        Core.SubscribeEvent("OnPanelOpened", OnPanelOpened);
-        Core.SubscribeEvent("OnToggleBars", OnBarsToggled);
-
-        InputControls.GestureDetected += OnGestureDetected;     //Moverio 4.5 ~ 4.6 with Input.GetMouse events
-
-        NativeToolkit.OnImageSaved += NativeToolkit_OnImageSaved;
-        ARDirectoryManager.OnImageLoadComplete += ARDirectoryManager_OnImageLoadComplete;
-    }
-
-    private void ARDirectoryManager_OnImageLoadComplete(string obj)
-    {
-        btnLoad.gameObject.SetActive(true);
-    }
-
-    private void NativeToolkit_OnImageSaved(string obj)
-    {
-        NativeToolkit.ScheduleLocalNotification("DentalAR", "Image saved to " + obj, smallIcon:"", largeIcon:"dental_notification_large");
-    }
-
-    void Start ()
-    {
         btnMenu.onClick.AddListener(() => HomePanel.OpenPanel());
         btnMenu.onClick.AddListener(() => OnBarsToggled(this, false));
 
         btnLoad.onClick.AddListener(() => DetailPanel.OpenPanel());
         btnLoad.onClick.AddListener(() => StartApp());
-        btnLoad.gameObject.SetActive(false);
 
         btnDetails.onClick.AddListener(() => DetailPanel.OpenPanel());
         btnDetails.onClick.AddListener(() => StopFeed());
@@ -118,6 +96,64 @@ public class ARGUIManager : MonoBehaviour
 
         btnSnapshot.onClick.AddListener(() => SnapShot());
         btnGallery.onClick.AddListener(() => NativeToolkit.PickImage());
+
+        Core.SubscribeEvent("OnPanelOpened", OnPanelOpened);
+        Core.SubscribeEvent("OnToggleBars", OnBarsToggled);
+
+        InputControls.GestureDetected += OnGestureDetected;     //Moverio 4.5 ~ 4.6 with Input.GetMouse events
+        InputControls.BackButtonPressed += InputControls_BackButtonPressed;
+        InputControls.SettingButtonPressed += InputControls_SettingButtonPressed;
+        NativeToolkit.OnImageSaved += NativeToolkit_OnImageSaved;
+        ARDirectoryManager.OnImageLoadComplete += ARDirectoryManager_OnImageLoadComplete;
+    }
+    void OnDisable()
+    {
+        btnLoad.onClick.RemoveAllListeners();
+        btnMenu.onClick.RemoveAllListeners();
+        btnDetails.onClick.RemoveAllListeners();
+        btnRadiograph.onClick.RemoveAllListeners();
+        btnMovement.onClick.RemoveAllListeners();
+        btnSimulation.onClick.RemoveAllListeners();
+        btnVideo.onClick.RemoveAllListeners();
+        btnCamera.onClick.RemoveAllListeners();
+        btnGallery.onClick.RemoveAllListeners();
+        btnSnapshot.onClick.RemoveAllListeners();
+
+        Core.UnsubscribeEvent("OnPanelOpened", OnPanelOpened);
+        Core.UnsubscribeEvent("OnToggleBars", OnBarsToggled);
+
+        InputControls.GestureDetected -= OnGestureDetected;     //Moverio 4.5 ~ 4.6 with Input.GetMouse events
+        InputControls.BackButtonPressed -= InputControls_BackButtonPressed;
+        InputControls.SettingButtonPressed -= InputControls_SettingButtonPressed;
+        NativeToolkit.OnImageSaved -= NativeToolkit_OnImageSaved;
+        ARDirectoryManager.OnImageLoadComplete -= ARDirectoryManager_OnImageLoadComplete;
+    }
+
+    private void InputControls_SettingButtonPressed(object source, EventArgs e)
+    {
+        ToggleMenu();
+    }
+
+    private void InputControls_BackButtonPressed(object source, EventArgs e)
+    {
+        btnMenu.onClick.Invoke();
+    }
+
+    private void ARDirectoryManager_OnImageLoadComplete(string obj)
+    {
+        btnLoad.gameObject.SetActive(true);
+    }
+
+    private void NativeToolkit_OnImageSaved(string obj)
+    {
+        NativeToolkit.ScheduleLocalNotification("DentalAR", "Image saved to " + obj, smallIcon:"", largeIcon:"dental_notification_large");
+    }
+
+    void Start ()
+    {
+        btnLoad.gameObject.SetActive(false);
+
+        ToggleMenu();
 
         if (TopBar != null)
         { 
@@ -238,25 +274,7 @@ public class ARGUIManager : MonoBehaviour
                 _camTex.Stop();
     }
 
-    void OnDisable()
-    {
-        btnLoad.onClick.RemoveAllListeners();
-        btnMenu.onClick.RemoveAllListeners();
-        btnDetails.onClick.RemoveAllListeners();
-        btnRadiograph.onClick.RemoveAllListeners();
-        btnMovement.onClick.RemoveAllListeners();
-        btnSimulation.onClick.RemoveAllListeners();
-        btnVideo.onClick.RemoveAllListeners();
-        btnCamera.onClick.RemoveAllListeners();
-        btnGallery.onClick.RemoveAllListeners();
-        btnSnapshot.onClick.RemoveAllListeners();
 
-        TouchControls.GestureDetected -= OnGestureDetected;
-        NativeToolkit.OnImageSaved -= NativeToolkit_OnImageSaved;
-        ARDirectoryManager.OnImageLoadComplete -= ARDirectoryManager_OnImageLoadComplete;
-
-        Core.UnsubscribeEvent("OnOpenPanel", OnPanelOpened);
-    }
 
     object OnPanelOpened(object sender, object args)
     {
@@ -338,16 +356,16 @@ public class ARGUIManager : MonoBehaviour
         }
 
         //Button mapping
-        if (Input.GetKeyDown(KeyCode.Menu)/* || Input.GetKeyDown(KeyCode.Return)*/)
-        {
-            HomePanel.OpenPanel();
-            OnBarsToggled(this, false);
-        }
+        //if (Input.GetKeyDown(KeyCode.Menu)/* || Input.GetKeyDown(KeyCode.Return)*/)
+        //{
+        //    HomePanel.OpenPanel();
+        //    OnBarsToggled(this, false);
+        //}
 
-        if (Input.GetKeyDown(KeyCode.Escape))
-        {
-            PreviousPanel();
-        }
+        //if (Input.GetKeyDown(KeyCode.Escape))
+        //{
+        //    PreviousPanel();
+        //}
 
         if (Input.GetKeyDown(KeyCode.LeftArrow))
         {
@@ -466,6 +484,27 @@ public class ARGUIManager : MonoBehaviour
             PanelType panelType = panel.panelType;
             OnPanelChanged(panelType);
         }
+    }
+
+    bool isMenuOpen
+    {
+        get
+        {
+            return btnMenu.image.color.a == 1;
+        }
+    }
+
+    float _fadeDuration = 0.25f;
+    void ToggleMenu()
+    {
+        float fadeTo = isMenuOpen ? 0 : 1;
+        btnMenu.image.CrossFadeAlpha(fadeTo == 1 ? 0 : 1, _fadeDuration, true);
+        btnDetails.image.CrossFadeAlpha(fadeTo, _fadeDuration, true);
+        btnRadiograph.image.CrossFadeAlpha(fadeTo, _fadeDuration, true);
+        btnMovement.image.CrossFadeAlpha(fadeTo, _fadeDuration, true);
+        btnSimulation.image.CrossFadeAlpha(fadeTo, _fadeDuration, true);
+        btnVideo.image.CrossFadeAlpha(fadeTo, _fadeDuration, true);
+        btnCamera.image.CrossFadeAlpha(fadeTo, _fadeDuration, true);
     }
 }
 
