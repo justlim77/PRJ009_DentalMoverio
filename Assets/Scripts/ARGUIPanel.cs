@@ -69,7 +69,7 @@ public class ARGUIPanel : MonoBehaviour
         _initialPos = rectTransform.anchoredPosition;
     }
 
-    Vector2 _scaleTo = new Vector2(1.1f, 1.1f);
+    Vector2 _scaleTo = new Vector2(1.25f, 1.25f);
     public void OpenPanel()
     {
         Core.BroadcastEvent("OnPanelOpened", this, this);

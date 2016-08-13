@@ -16,7 +16,7 @@ public class InputControls : MonoBehaviour
     public static event BackButtonPressedEventHandler BackButtonPressed;
 
     public delegate void SettingButtonPressedEventHandler(object source, EventArgs e);
-    public static event SettingButtonPressedEventHandler SettingButtonPressed;
+    public static event SettingButtonPressedEventHandler MenuButtonPressed;
 
     [Header("Button mapping")]
     public KeyCode FirstTouch = KeyCode.Mouse0;
@@ -26,7 +26,7 @@ public class InputControls : MonoBehaviour
     public KeyCode ScrollUp = KeyCode.UpArrow;
     public KeyCode ScrollDown = KeyCode.DownArrow;
     public KeyCode Back = KeyCode.Escape;
-    public KeyCode Settings = KeyCode.Menu;
+    public KeyCode Menu = KeyCode.Menu;
     public KeyCode VolumeUp = (KeyCode)24;
     public KeyCode VolumeDown = (KeyCode)25;
 
@@ -65,10 +65,10 @@ public class InputControls : MonoBehaviour
             BackButtonPressed(this, new EventArgs() { });
     }
 
-    protected virtual void OnSettingButtonPressed()
+    protected virtual void OnMenuButtonPressed()
     {
-        if (SettingButtonPressed != null)
-            SettingButtonPressed(this, new EventArgs() { });
+        if (MenuButtonPressed != null)
+            MenuButtonPressed(this, new EventArgs() { });
     }
 
     void Start ()
@@ -169,9 +169,9 @@ public class InputControls : MonoBehaviour
             OnBackButtonPressed();
         }
 
-        if (Input.GetKeyDown(Settings))
+        if (Input.GetKeyDown(Menu))
         {
-            OnSettingButtonPressed();
+            OnMenuButtonPressed();
         }
 
         //if(swiping == true && from == to)

@@ -31,23 +31,23 @@ public class ARGUIManager : MonoBehaviour
     [SerializeField] GameObject MidPanel;
     [SerializeField] ARGUIPanel MutePanel;
     [Header("Buttons")]
-    [SerializeField] Button btnDetails;
-    [SerializeField] Button btnRadiograph;
-    [SerializeField] Button btnMovement;
-    [SerializeField] Button btnSimulation;
-    [SerializeField] Button btnVideo;
-    [SerializeField] Button btnCamera;
-    [SerializeField] Button btnGallery;
-    [SerializeField] Button btnMenu;
+    public Button btnDetails;
+    public Button btnRadiograph;
+    public Button btnMovement;
+    public Button btnSimulation;
+    public Button btnVideo;
+    public Button btnCamera;
+    public Button btnGallery;
+    public Button btnMenu;
     [Header("General")]
-    [SerializeField] Button btnLoad;
-    [SerializeField] GameObject TopBar;
-    [SerializeField] GameObject BotBar;
+    public Button btnLoad;
+    public GameObject TopBar;
+    public GameObject BotBar;
     [SerializeField] float panelSlideSpeed = 5.0f;
     [Header("Camera")]
-    [SerializeField] Image cameraPlane;
-    [SerializeField] Resolution resolution;
-    [SerializeField] Button btnSnapshot;
+    public Image cameraPlane;
+    public Resolution resolution;
+    public Button btnSnapshot;
 
     WebCamDevice _device;
     WebCamTexture _camTex;
@@ -70,8 +70,9 @@ public class ARGUIManager : MonoBehaviour
 
     void OnEnable()
     {
-        btnMenu.onClick.AddListener(() => HomePanel.OpenPanel());
-        btnMenu.onClick.AddListener(() => OnBarsToggled(this, false));
+        //btnMenu.onClick.AddListener(() => HomePanel.OpenPanel());
+        //btnMenu.onClick.AddListener(() => OnBarsToggled(this, false));
+        btnMenu.onClick.AddListener(delegate { ToggleMenu(); } );
 
         btnLoad.onClick.AddListener(() => DetailPanel.OpenPanel());
         btnLoad.onClick.AddListener(() => StartApp());
@@ -102,10 +103,11 @@ public class ARGUIManager : MonoBehaviour
 
         InputControls.GestureDetected += OnGestureDetected;     //Moverio 4.5 ~ 4.6 with Input.GetMouse events
         InputControls.BackButtonPressed += InputControls_BackButtonPressed;
-        InputControls.SettingButtonPressed += InputControls_SettingButtonPressed;
+        InputControls.MenuButtonPressed += InputControls_MenuButtonPressed;
         NativeToolkit.OnImageSaved += NativeToolkit_OnImageSaved;
         ARDirectoryManager.OnImageLoadComplete += ARDirectoryManager_OnImageLoadComplete;
     }
+
     void OnDisable()
     {
         btnLoad.onClick.RemoveAllListeners();
@@ -124,19 +126,21 @@ public class ARGUIManager : MonoBehaviour
 
         InputControls.GestureDetected -= OnGestureDetected;     //Moverio 4.5 ~ 4.6 with Input.GetMouse events
         InputControls.BackButtonPressed -= InputControls_BackButtonPressed;
-        InputControls.SettingButtonPressed -= InputControls_SettingButtonPressed;
+        InputControls.MenuButtonPressed -= InputControls_MenuButtonPressed;
         NativeToolkit.OnImageSaved -= NativeToolkit_OnImageSaved;
         ARDirectoryManager.OnImageLoadComplete -= ARDirectoryManager_OnImageLoadComplete;
     }
 
-    private void InputControls_SettingButtonPressed(object source, EventArgs e)
+    private void InputControls_MenuButtonPressed(object source, EventArgs e)
     {
         ToggleMenu();
     }
 
     private void InputControls_BackButtonPressed(object source, EventArgs e)
     {
-        btnMenu.onClick.Invoke();
+        //btnMenu.onClick.Invoke();
+        HomePanel.OpenPanel();
+        btnMenu.onClick.AddListener(() => OnBarsToggled(this, false));
     }
 
     private void ARDirectoryManager_OnImageLoadComplete(string obj)
@@ -153,7 +157,7 @@ public class ARGUIManager : MonoBehaviour
     {
         btnLoad.gameObject.SetActive(false);
 
-        ToggleMenu();
+        InitializeButtons();
 
         if (TopBar != null)
         { 
@@ -274,8 +278,6 @@ public class ARGUIManager : MonoBehaviour
                 _camTex.Stop();
     }
 
-
-
     object OnPanelOpened(object sender, object args)
     {
         ARGUIPanel panel;
@@ -316,7 +318,7 @@ public class ARGUIManager : MonoBehaviour
 
             _currentPanelIdx = Array.IndexOf(ARGUIPanels, panel);
 
-            string msg = panel.panelType.ToString();
+            string msg = panel.panelHeader;
             Core.BroadcastEvent("OnUpdateHeader", this, msg);
         }
 
@@ -385,6 +387,11 @@ public class ARGUIManager : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.DownArrow))
         {
             _currentDetailPanel.Scroll(ScrollType.Up);
+        }
+
+        if (Input.GetKeyDown(KeyCode.Tab))
+        {
+            ToggleMenu();
         }
     }
 
@@ -488,23 +495,34 @@ public class ARGUIManager : MonoBehaviour
 
     bool isMenuOpen
     {
-        get
-        {
-            return btnMenu.image.color.a == 1;
-        }
+        get; set;
     }
 
     float _fadeDuration = 0.25f;
     void ToggleMenu()
     {
-        float fadeTo = isMenuOpen ? 0 : 1;
-        btnMenu.image.CrossFadeAlpha(fadeTo == 1 ? 0 : 1, _fadeDuration, true);
-        btnDetails.image.CrossFadeAlpha(fadeTo, _fadeDuration, true);
-        btnRadiograph.image.CrossFadeAlpha(fadeTo, _fadeDuration, true);
-        btnMovement.image.CrossFadeAlpha(fadeTo, _fadeDuration, true);
-        btnSimulation.image.CrossFadeAlpha(fadeTo, _fadeDuration, true);
-        btnVideo.image.CrossFadeAlpha(fadeTo, _fadeDuration, true);
-        btnCamera.image.CrossFadeAlpha(fadeTo, _fadeDuration, true);
+        isMenuOpen = btnMenu.image.canvasRenderer.GetAlpha() == 1 ? true : false;
+        float menuFadeTo = isMenuOpen ? 0 : 1;
+        float buttonFadeTo = menuFadeTo == 1 ? 0 : 1;
+
+        btnMenu.image.CrossFadeAlpha(menuFadeTo, _fadeDuration, true);
+        btnDetails.image.CrossFadeAlpha(buttonFadeTo, _fadeDuration, true);
+        btnRadiograph.image.CrossFadeAlpha(buttonFadeTo, _fadeDuration, true);
+        btnMovement.image.CrossFadeAlpha(buttonFadeTo, _fadeDuration, true);
+        btnSimulation.image.CrossFadeAlpha(buttonFadeTo, _fadeDuration, true);
+        btnVideo.image.CrossFadeAlpha(buttonFadeTo, _fadeDuration, true);
+        btnCamera.image.CrossFadeAlpha(buttonFadeTo, _fadeDuration, true);
+    }
+
+    void InitializeButtons()
+    {
+        btnMenu.image.canvasRenderer.SetAlpha(1.0f);
+        btnDetails.image.canvasRenderer.SetAlpha(0.0f);
+        btnRadiograph.image.canvasRenderer.SetAlpha(0.0f);
+        btnMovement.image.canvasRenderer.SetAlpha(0.0f);
+        btnSimulation.image.canvasRenderer.SetAlpha(0.0f);
+        btnVideo.image.canvasRenderer.SetAlpha(0.0f);
+        btnCamera.image.canvasRenderer.SetAlpha(0.0f);
     }
 }
 
