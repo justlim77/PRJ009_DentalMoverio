@@ -72,7 +72,7 @@ public class ARGUIManager : MonoBehaviour
     {
         //btnMenu.onClick.AddListener(() => HomePanel.OpenPanel());
         //btnMenu.onClick.AddListener(() => OnBarsToggled(this, false));
-        btnMenu.onClick.AddListener(delegate { ToggleMenu(); } );
+        //btnMenu.onClick.AddListener(delegate { ToggleMenu(); } );
 
         btnLoad.onClick.AddListener(() => DetailPanel.OpenPanel());
         btnLoad.onClick.AddListener(() => StartApp());
